@@ -70,4 +70,5 @@ export interface ScanAPIResponse {
   result?: BreedScanResult;
   error?: string;
   limitReached?: boolean;
+  testMode?: boolean;
 }

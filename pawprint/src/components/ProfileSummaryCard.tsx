@@ -5,7 +5,7 @@ import type { PetProfile, ScanAPIResponse, BreedScanResult } from '@/types';
 
 interface Props {
   profile: PetProfile;
-  onResult: (result: BreedScanResult, preview: string) => void;
+  onResult: (result: BreedScanResult, preview: string, testMode: boolean) => void;
   onReset: () => void;
 }
 
@@ -86,7 +86,7 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
       const res = await fetch('/api/scan', { method: 'POST', body: fd });
       const data: ScanAPIResponse = await res.json();
       if (!data.success || !data.result) throw new Error(data.error || 'Analysis failed');
-      onResult(data.result, preview!);
+      onResult(data.result, preview!, data.testMode ?? false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

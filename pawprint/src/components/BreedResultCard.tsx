@@ -8,6 +8,7 @@ interface Props {
   imagePreview: string;
   profile: PetProfile;
   onReset: () => void;
+  testMode?: boolean;
 }
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -19,7 +20,7 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function BreedResultCard({ result, imagePreview, profile, onReset }: Props) {
+export default function BreedResultCard({ result, imagePreview, profile, onReset, testMode }: Props) {
   const [copied, setCopied] = useState(false);
 
   const shareText = `Just used PawPrint AI to identify ${profile.name}! 🐾\n\nBreed: ${result.primary_breed}${result.secondary_breed ? ` × ${result.secondary_breed}` : ''}\n${result.fun_fact}\n\nTry it free → https://pawprint.app\n\n#PawPrint #PetAI`;
@@ -35,6 +36,14 @@ export default function BreedResultCard({ result, imagePreview, profile, onReset
 
   return (
     <div className="slide-in" style={{ maxWidth: '560px', margin: '0 auto', padding: '0 24px 80px' }}>
+      {testMode && (
+        <div style={{ background: 'var(--gold-glow)', border: '1px solid var(--gold-border)', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '14px' }}>⚡</span>
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '11px', color: 'var(--gold)', letterSpacing: '0.5px' }}>
+            Test Mode — Add your <code style={{ background: 'rgba(0,0,0,0.15)', padding: '1px 5px', borderRadius: '4px' }}>ANTHROPIC_API_KEY</code> to <code style={{ background: 'rgba(0,0,0,0.15)', padding: '1px 5px', borderRadius: '4px' }}>.env.local</code> for live AI analysis
+          </span>
+        </div>
+      )}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
         {/* Hero photo + breed */}
         <div style={{ position: 'relative' }}>

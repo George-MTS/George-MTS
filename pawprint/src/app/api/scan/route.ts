@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { anthropic } from '@/lib/anthropic';
 import { bufferToBase64 } from '@/lib/utils';
 import { checkAndIncrement } from '@/lib/usageCounter';
+import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
 import type { BreedScanResult, ScanAPIResponse } from '@/types';
 
 const SYSTEM_PROMPT = `You are an expert veterinarian and animal breed specialist. Analyse this pet photo and return a JSON object with these fields: primary_breed, secondary_breed (if mixed), breed_percentage (e.g. "65% Labrador, 35% Husky"), coat_description, estimated_age_range, size_category, typical_temperament, common_health_considerations, fun_fact. Keep all descriptions friendly, warm and engaging — not clinical.
@@ -62,16 +63,21 @@ export async function POST(request: NextRequest): Promise<Response> {
       return Response.json({ success: false, error: 'No image provided' } satisfies ScanAPIResponse, { status: 400 });
     }
 
+    if (IS_TEST_MODE) {
+      console.log('[TEST MODE] Using mock AI result — add a real ANTHROPIC_API_KEY to .env.local for live AI');
+      return Response.json({ success: true, result: MOCK_SCAN_RESULT, testMode: true } satisfies ScanAPIResponse);
+    }
+
     const buffer = await imageFile.arrayBuffer();
     const base64 = bufferToBase64(buffer);
 
-    const name = formData.get('name') as string || '';
-    const size = formData.get('size') as string || '';
-    const weight = formData.get('weight') as string || '';
-    const coat = formData.get('coat') as string || '';
-    const ears = formData.get('ears') as string || '';
-    const energy = formData.get('energy') as string || '';
-    const birthday = formData.get('birthday') as string || '';
+    const name = (formData.get('name') as string) || '';
+    const size = (formData.get('size') as string) || '';
+    const weight = (formData.get('weight') as string) || '';
+    const coat = (formData.get('coat') as string) || '';
+    const ears = (formData.get('ears') as string) || '';
+    const energy = (formData.get('energy') as string) || '';
+    const birthday = (formData.get('birthday') as string) || '';
 
     const context = [
       name && `Name: ${name}`,

@@ -19,9 +19,10 @@ export default function Home() {
   const [profile, setProfile] = useState<PetProfile | null>(null);
   const [scanResult, setScanResult] = useState<BreedScanResult | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [testMode, setTestMode] = useState(false);
 
   const handleProfileComplete = (p: PetProfile) => { setProfile(p); setStage('summary'); };
-  const handleScanResult = (result: BreedScanResult, preview: string) => { setScanResult(result); setImagePreview(preview); setStage('result'); };
+  const handleScanResult = (result: BreedScanResult, preview: string, isTestMode: boolean) => { setScanResult(result); setImagePreview(preview); setTestMode(isTestMode); setStage('result'); };
   const handleReset = () => { setProfile(null); setScanResult(null); setImagePreview(''); setStage('quiz'); };
 
   return (
@@ -38,7 +39,7 @@ export default function Home() {
               <ProfileSummaryCard profile={profile} onResult={handleScanResult} onReset={handleReset} />
             )}
             {stage === 'result' && scanResult && profile && (
-              <BreedResultCard result={scanResult} imagePreview={imagePreview} profile={profile} onReset={handleReset} />
+              <BreedResultCard result={scanResult} imagePreview={imagePreview} profile={profile} onReset={handleReset} testMode={testMode} />
             )}
           </>
         )}
