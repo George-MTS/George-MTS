@@ -40,3 +40,34 @@ export interface StatsResponse {
   dogCount: number;
   catCount: number;
 }
+
+export interface PetProfile {
+  name: string;
+  gender: 'boy' | 'girl' | 'other';
+  birthday: string;
+  size: 'tiny' | 'medium' | 'large' | 'giant';
+  weight: number;
+  weightUnit: 'kg' | 'lbs';
+  coat: 'fluffy' | 'smooth' | 'curly' | 'wiry';
+  ears: 'floppy' | 'perky' | 'mixed';
+  energy: 'couch' | 'balanced' | 'zoomies';
+}
+
+export interface BreedScanResult {
+  primary_breed: string;
+  secondary_breed?: string;
+  breed_percentage?: string;
+  coat_description: string;
+  estimated_age_range: string;
+  size_category: string;
+  typical_temperament: string;
+  common_health_considerations: string;
+  fun_fact: string;
+}
+
+export interface ScanAPIResponse {
+  success: boolean;
+  result?: BreedScanResult;
+  error?: string;
+  limitReached?: boolean;
+}
