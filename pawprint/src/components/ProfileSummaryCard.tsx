@@ -53,13 +53,13 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
     setError(null);
   };
 
-  // Compress image client-side before upload — reduces ~3MB to <200KB
+  // Compress image client-side — keeps upload well under Vercel's 4.5MB limit
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve) => {
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
       img.onload = () => {
-        const MAX = 800;
+        const MAX = 1024;
         let { width, height } = img;
         if (width > MAX || height > MAX) {
           if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
@@ -74,10 +74,10 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
         canvas.toBlob(
           (blob) => {
             if (blob) resolve(new File([blob], 'photo.jpg', { type: 'image/jpeg' }));
-            else resolve(file); // fallback: use original
+            else resolve(file);
           },
           'image/jpeg',
-          0.7,
+          0.75,
         );
       };
       img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
@@ -118,7 +118,19 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
 
     try {
       const res = await fetch('/api/scan', { method: 'POST', body: fd });
-      const data: ScanAPIResponse = await res.json();
+
+      // Vercel returns a plain-text or HTML 413 before Next.js can handle it —
+      // always read as text first, then try to parse JSON.
+      if (res.status === 413) {
+        throw new Error('Photo is too large — please try a smaller image');
+      }
+      const text = await res.text();
+      let data: ScanAPIResponse;
+      try {
+        data = JSON.parse(text) as ScanAPIResponse;
+      } catch {
+        throw new Error(`Unexpected server response (${res.status}) — please try again`);
+      }
       if (!data.success || !data.result) throw new Error(data.error || 'Analysis failed');
       onResult(data.result, preview!, data.testMode ?? false);
     } catch (err) {

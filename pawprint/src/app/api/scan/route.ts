@@ -71,13 +71,12 @@ async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buf
   }
 
   const bytes = Buffer.from(buffer);
-  const sizeMB = bytes.byteLength / (1024 * 1024);
 
-  const pipeline = sharp(bytes, { failOn: 'none' });
-  if (sizeMB > 5) {
-    pipeline.resize(2000, 2000, { fit: 'inside', withoutEnlargement: true });
-  }
-  return pipeline.rotate().jpeg({ quality: 85 }).toBuffer();
+  return sharp(bytes, { failOn: 'none' })
+    .rotate()
+    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
 }
 
 interface RawResult extends BreedScanResult {
