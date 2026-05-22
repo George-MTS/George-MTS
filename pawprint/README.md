@@ -73,6 +73,6 @@ Every submission in Phase 1 directly improves the accuracy and speed of Phase 2 
 - **Frontend:** Next.js 14 (App Router) + TypeScript
 - **Styling:** Tailwind CSS + inline styles
 - **Database:** Supabase (Postgres)
-- **AI:** Anthropic Claude (`claude-sonnet-4-20250514`) with vision
+- **AI:** Anthropic Claude (`claude-sonnet-4-5`) with vision
 - **Image Storage:** Supabase Storage
 - **Deployment:** Vercel
