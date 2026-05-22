@@ -67,16 +67,41 @@ const LOW_CONFIDENCE_RETRY = `Your confidence was below 60%. Please look more ca
 
 Reconsider your identification and provide an updated JSON response.`;
 
-async function resizeIfNeeded(buffer: ArrayBuffer): Promise<Buffer> {
+const SUPPORTED_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/heic',
+  'image/heif',
+]);
+
+function validateMimeType(mime: string): void {
+  // Browsers sometimes report HEIC as 'application/octet-stream' — we let sharp handle that.
+  // Only hard-reject types we know are unprocessable.
+  const lower = mime.toLowerCase();
+  if (lower && !SUPPORTED_TYPES.has(lower) && !lower.startsWith('application/octet-stream')) {
+    throw new Error('Please upload a JPG or PNG photo');
+  }
+}
+
+async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buffer> {
+  validateMimeType(mimeType);
+
   const bytes = Buffer.from(buffer);
   const sizeMB = bytes.byteLength / (1024 * 1024);
+
+  const pipeline = sharp(bytes, {
+    // Needed for HEIC/HEIF decoding on some platforms
+    failOn: 'none',
+  });
+
   if (sizeMB > 5) {
-    return sharp(bytes)
-      .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toBuffer();
+    pipeline.resize(2000, 2000, { fit: 'inside', withoutEnlargement: true });
   }
-  return sharp(bytes).jpeg({ quality: 90 }).toBuffer();
+
+  return pipeline.rotate().jpeg({ quality: 85 }).toBuffer();
 }
 
 async function callClaude(base64: string, userMessage: string): Promise<AIAnalysisResult> {
@@ -127,7 +152,13 @@ export async function POST(request: NextRequest): Promise<Response> {
     const traits = (formData.get('traits') as string) || '';
 
     const rawBuffer = await imageFile.arrayBuffer();
-    const imageBuffer = await resizeIfNeeded(rawBuffer);
+    let imageBuffer: Buffer;
+    try {
+      imageBuffer = await convertToJpeg(rawBuffer, imageFile.type);
+    } catch (convErr) {
+      const msg = convErr instanceof Error ? convErr.message : 'Unsupported image format';
+      return Response.json({ success: false, error: msg } satisfies AnalyseAPIResponse, { status: 415 });
+    }
     const base64Image = bufferToBase64(imageBuffer.buffer as ArrayBuffer);
 
     const userMessage = `Look carefully at this pet photo. Take your time to examine all visible features before responding.

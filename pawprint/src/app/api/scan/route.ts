@@ -52,21 +52,30 @@ const LOW_CONFIDENCE_RETRY = `Your confidence was below 60%. Please look more ca
 
 Reconsider your identification and provide an updated JSON response.`;
 
-async function resizeIfNeeded(buffer: ArrayBuffer): Promise<{ data: Buffer; mime: 'image/jpeg' }> {
+const SUPPORTED_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/heic',
+  'image/heif',
+]);
+
+async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buffer> {
+  const lower = mimeType.toLowerCase();
+  if (lower && !SUPPORTED_TYPES.has(lower) && !lower.startsWith('application/octet-stream')) {
+    throw new Error('Please upload a JPG or PNG photo');
+  }
+
   const bytes = Buffer.from(buffer);
   const sizeMB = bytes.byteLength / (1024 * 1024);
 
+  const pipeline = sharp(bytes, { failOn: 'none' });
   if (sizeMB > 5) {
-    const resized = await sharp(bytes)
-      .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-    return { data: resized, mime: 'image/jpeg' };
+    pipeline.resize(2000, 2000, { fit: 'inside', withoutEnlargement: true });
   }
-
-  // Always normalise to JPEG for consistent Claude vision results
-  const jpeg = await sharp(bytes).jpeg({ quality: 90 }).toBuffer();
-  return { data: jpeg, mime: 'image/jpeg' };
+  return pipeline.rotate().jpeg({ quality: 85 }).toBuffer();
 }
 
 interface RawResult extends BreedScanResult {
@@ -132,7 +141,13 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     const rawBuffer = await imageFile.arrayBuffer();
-    const { data: imageBuffer, mime } = await resizeIfNeeded(rawBuffer);
+    let imageBuffer: Buffer;
+    try {
+      imageBuffer = await convertToJpeg(rawBuffer, imageFile.type);
+    } catch (convErr) {
+      const msg = convErr instanceof Error ? convErr.message : 'Unsupported image format';
+      return Response.json({ success: false, error: msg } satisfies ScanAPIResponse, { status: 415 });
+    }
     const base64 = imageBuffer.toString('base64');
 
     const name = (formData.get('name') as string) || '';
