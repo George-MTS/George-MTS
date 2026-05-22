@@ -106,7 +106,7 @@ async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buf
 
 async function callClaude(base64: string, userMessage: string): Promise<AIAnalysisResult> {
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-5',
     max_tokens: 1500,
     system: SYSTEM_PROMPT,
     messages: [

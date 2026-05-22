@@ -90,7 +90,7 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
     : `Look carefully at this pet photo. Take your time to examine all visible features before responding.\n\nOwner-provided context:\n${context || 'None provided'}\n\nReturn ONLY raw JSON.`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-5',
     max_tokens: 1200,
     system: SYSTEM_PROMPT,
     messages: [
