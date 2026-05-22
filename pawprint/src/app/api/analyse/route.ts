@@ -127,11 +127,24 @@ async function callClaude(base64: string, userMessage: string): Promise<AIAnalys
   if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
 
   let jsonText = content.text.trim();
+
+  // Strip markdown code fences if present
   const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) jsonText = fenceMatch[1].trim();
 
-  return JSON.parse(jsonText) as AIAnalysisResult;
+  // Isolate the first JSON object in case Claude added any preamble
+  const objMatch = jsonText.match(/\{[\s\S]*\}/);
+  if (objMatch) jsonText = objMatch[0];
+
+  try {
+    return JSON.parse(jsonText) as AIAnalysisResult;
+  } catch (parseErr) {
+    console.error('[ANALYSE] Claude returned non-JSON response:', content.text);
+    throw new Error('AI returned an unexpected response — please try again');
+  }
 }
+
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {

@@ -6,6 +6,8 @@ import { checkAndIncrement } from '@/lib/usageCounter';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
 import type { BreedScanResult, ScanAPIResponse } from '@/types';
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `You are the world's most accurate dog and cat breed identification expert.
 You have encyclopedic knowledge of every AKC, KC, and FCI registered breed,
 plus mixed breeds, and regional/African breeds.
@@ -112,7 +114,15 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) text = fence[1].trim();
 
-  return JSON.parse(text) as RawResult;
+  const objMatch = text.match(/\{[\s\S]*\}/);
+  if (objMatch) text = objMatch[0];
+
+  try {
+    return JSON.parse(text) as RawResult;
+  } catch {
+    console.error('[SCAN] Claude returned non-JSON response:', content.text);
+    throw new Error('AI returned an unexpected response — please try again');
+  }
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
