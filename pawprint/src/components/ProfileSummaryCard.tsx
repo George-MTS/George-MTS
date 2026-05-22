@@ -53,6 +53,38 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
     setError(null);
   };
 
+  // Compress image client-side before upload — reduces ~3MB to <200KB
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(new File([blob], 'photo.jpg', { type: 'image/jpeg' }));
+            else resolve(file); // fallback: use original
+          },
+          'image/jpeg',
+          0.7,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+      img.src = objectUrl;
+    });
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
     const f = e.dataTransfer.files[0];
@@ -72,8 +104,10 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
       localStorage.setItem('pawprint-scans', JSON.stringify(stored));
     } catch { /* ignore */ }
 
+    const compressed = await compressImage(imageFile);
+
     const fd = new FormData();
-    fd.append('image', imageFile);
+    fd.append('image', compressed);
     fd.append('name', profile.name);
     fd.append('birthday', profile.birthday);
     fd.append('size', profile.size);
