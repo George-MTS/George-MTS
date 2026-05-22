@@ -15,4 +15,5 @@ export const MOCK_SCAN_RESULT: BreedScanResult = {
 export const IS_TEST_MODE =
   !process.env.ANTHROPIC_API_KEY ||
   process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key' ||
-  process.env.ANTHROPIC_API_KEY.length < 20;
+  process.env.ANTHROPIC_API_KEY === 'placeholder' ||
+  process.env.ANTHROPIC_API_KEY.length < 30;

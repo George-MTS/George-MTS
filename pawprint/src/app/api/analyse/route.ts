@@ -1,50 +1,85 @@
 import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import sharp from 'sharp';
 import { createServiceClient } from '@/lib/supabase';
 import { anthropic } from '@/lib/anthropic';
 import { bufferToBase64 } from '@/lib/utils';
 import type { AIAnalysisResult, AnalyseAPIResponse } from '@/types';
 
-const SYSTEM_PROMPT = `You are PawPrint AI, the world's most knowledgeable expert in dog and cat breeds, animal behaviour, veterinary care, and pet origins.
+const SYSTEM_PROMPT = `You are the world's most accurate dog and cat breed identification expert.
+You have encyclopedic knowledge of every AKC, KC, and FCI registered breed,
+plus mixed breeds, and regional/African breeds.
 
-The user has submitted a photo of their pet along with optional details. Your job is to:
-1. Analyse the photo carefully for visual breed characteristics (coat, body shape, ears, tail, size, markings)
-2. Cross-reference with any details provided by the owner
-3. Return a comprehensive breed profile
+IDENTIFICATION METHODOLOGY:
+1. First examine the HEAD shape — ear set, ear length, muzzle length, skull shape, eye colour and set
+2. Then examine COAT — texture, length, feathering, colour pattern, markings
+3. Then examine BODY — size, bone structure, chest depth, tail set
+4. Cross-reference ALL three before deciding
+5. Factor in any owner-provided details as supporting evidence
 
-CRITICAL: Respond ONLY with a valid JSON object. No preamble. No markdown. No backticks. No explanation. Just raw JSON.
+KEY SPANIEL IDENTIFICATION MARKERS (example of the detail level required):
+- English Springer Spaniel: liver/white or black/white, long feathered ears set at eye level,
+  medium size (18-25kg), domed skull, deep chest, feathered legs and chest
+- Cocker Spaniel: smaller, more domed head, longer ears set BELOW eye level, silkier coat
+- Field Spaniel: darker, more solid colour, lower set ears, longer body
+- Welsh Springer Spaniel: always red/white only, never liver/white
 
-JSON format:
+CONFIDENCE SCORING:
+- 90-100%: Purebred with multiple clear identifying features visible
+- 70-89%: Strong likelihood, one or two features ambiguous
+- 50-69%: Best guess, mixed breed likely or photo quality limits assessment
+- Below 50%: Cannot determine — say so honestly
+
+CRITICAL RULES:
+- NEVER default to Golden Retriever or Labrador unless you are certain
+- If you see a Spaniel, identify WHICH type specifically
+- If the dog is a mix, say "X mix" or "X/Y cross" — do not pretend it is purebred
+- A wrong confident answer is worse than an honest uncertain one
+
+RESPONSE FORMAT:
+Respond ONLY with a valid JSON object. No preamble. No markdown. No backticks. Raw JSON only.
+
 {
-  "breedIdentified": "Full official breed name or most likely mix",
-  "confidence": 82,
-  "origin": "Country or region this breed originates from",
-  "temperament": "3-4 sentence description of this breed's typical personality, energy level, loyalty, and behaviour with families",
-  "careNotes": "3-4 sentences covering exercise needs, grooming requirements, diet considerations, and common health issues to watch for",
+  "breedIdentified": "English Springer Spaniel",
+  "confidence": 94,
+  "origin": "England, United Kingdom",
+  "temperament": "3-4 sentence description of personality, energy, loyalty, and family behaviour",
+  "careNotes": "3-4 sentences on exercise, grooming, diet, and health issues to watch for",
   "traits": [
-    {"label": "Energy Level", "value": "High"},
-    {"label": "Good with Kids", "value": "Yes"},
-    {"label": "Coat Type", "value": "Double coat, medium length"},
-    {"label": "Size Category", "value": "Large (25-35kg)"},
-    {"label": "Trainability", "value": "Excellent — eager to please"},
-    {"label": "Average Lifespan", "value": "10–12 years"},
-    {"label": "Shedding", "value": "Heavy — seasonal"},
+    {"label": "Energy Level", "value": "Very High"},
+    {"label": "Good with Kids", "value": "Excellent"},
+    {"label": "Coat Type", "value": "Medium, wavy, feathered"},
+    {"label": "Size Category", "value": "Medium (18–25 kg)"},
+    {"label": "Trainability", "value": "Excellent — highly intelligent"},
+    {"label": "Average Lifespan", "value": "12–14 years"},
+    {"label": "Shedding", "value": "Moderate — year round"},
     {"label": "Hypoallergenic", "value": "No"}
   ],
-  "funFact": "One surprising or little-known fact about this breed",
-  "similarBreeds": ["Breed 1", "Breed 2"]
+  "funFact": "One surprising or little-known fact about this specific breed",
+  "similarBreeds": ["Welsh Springer Spaniel", "Cocker Spaniel", "Field Spaniel"]
 }`;
 
-async function callClaude(
-  base64Image: string,
-  mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-  userMessage: string,
-  strict = false
-): Promise<AIAnalysisResult> {
-  const prompt = strict
-    ? `${userMessage}\n\nCRITICAL REMINDER: You MUST return ONLY raw JSON. No text before or after. No markdown code fences. Start your response with { and end with }.`
-    : userMessage;
+const LOW_CONFIDENCE_RETRY = `Your confidence was below 60%. Please look more carefully at:
+1. The ear set and length relative to the skull
+2. The exact coat colour pattern and any ticking or roan
+3. The body proportions and bone density
+4. Any feathering on legs, chest, and ears
 
+Reconsider your identification and provide an updated JSON response.`;
+
+async function resizeIfNeeded(buffer: ArrayBuffer): Promise<Buffer> {
+  const bytes = Buffer.from(buffer);
+  const sizeMB = bytes.byteLength / (1024 * 1024);
+  if (sizeMB > 5) {
+    return sharp(bytes)
+      .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+  }
+  return sharp(bytes).jpeg({ quality: 90 }).toBuffer();
+}
+
+async function callClaude(base64: string, userMessage: string): Promise<AIAnalysisResult> {
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1500,
@@ -55,34 +90,22 @@ async function callClaude(
         content: [
           {
             type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType,
-              data: base64Image,
-            },
+            source: { type: 'base64', media_type: 'image/jpeg', data: base64 },
           },
-          {
-            type: 'text',
-            text: prompt,
-          },
+          { type: 'text', text: userMessage },
         ],
       },
     ],
   });
 
   const content = response.content[0];
-  if (content.type !== 'text') {
-    throw new Error('Unexpected response type from Claude');
-  }
+  if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
 
   let jsonText = content.text.trim();
   const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    jsonText = fenceMatch[1].trim();
-  }
+  if (fenceMatch) jsonText = fenceMatch[1].trim();
 
-  const parsed = JSON.parse(jsonText) as AIAnalysisResult;
-  return parsed;
+  return JSON.parse(jsonText) as AIAnalysisResult;
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -103,35 +126,14 @@ export async function POST(request: NextRequest): Promise<Response> {
     const twitter = (formData.get('twitter') as string) || '';
     const traits = (formData.get('traits') as string) || '';
 
-    const supabaseAdmin = createServiceClient();
+    const rawBuffer = await imageFile.arrayBuffer();
+    const imageBuffer = await resizeIfNeeded(rawBuffer);
+    const base64Image = bufferToBase64(imageBuffer.buffer as ArrayBuffer);
 
-    const imageBuffer = await imageFile.arrayBuffer();
-    const base64Image = bufferToBase64(imageBuffer);
-    const mimeType = imageFile.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
-    const safeMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)
-      ? mimeType
-      : 'image/jpeg';
+    const userMessage = `Look carefully at this pet photo. Take your time to examine all visible features before responding.
 
-    const filename = `${Date.now()}_${uuidv4()}.jpg`;
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from('pet-photos')
-      .upload(filename, imageBuffer, {
-        contentType: imageFile.type,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw new Error(`Storage upload failed: ${uploadError.message}`);
-    }
-
-    const { data: publicUrlData } = supabaseAdmin.storage
-      .from('pet-photos')
-      .getPublicUrl(uploadData.path);
-
-    const imageUrl = publicUrlData.publicUrl;
-
-    const userMessage = `Please analyse this ${petType} photo.
 Owner provided details:
+- Pet type: ${petType}
 - Pet name: ${petName || 'Not provided'}
 - Breed (owner's guess): ${breed || 'Not provided'}
 - Age: ${age || 'Not provided'}
@@ -140,12 +142,27 @@ Owner provided details:
 
 Provide a full breed analysis as JSON.`;
 
-    let aiResult: AIAnalysisResult;
-    try {
-      aiResult = await callClaude(base64Image, safeMime, userMessage, false);
-    } catch {
-      aiResult = await callClaude(base64Image, safeMime, userMessage, true);
+    let aiResult = await callClaude(base64Image, userMessage);
+
+    // Retry if low confidence
+    if (aiResult.confidence < 60) {
+      console.log(`[ANALYSE] Low confidence (${aiResult.confidence}%), retrying`);
+      try {
+        const retry = await callClaude(base64Image, LOW_CONFIDENCE_RETRY);
+        if (retry.confidence > aiResult.confidence) aiResult = retry;
+      } catch { /* keep original result */ }
     }
+
+    const supabaseAdmin = createServiceClient();
+    const filename = `${Date.now()}_${uuidv4()}.jpg`;
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('pet-photos')
+      .upload(filename, imageBuffer, { contentType: 'image/jpeg', upsert: false });
+
+    if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
+
+    const { data: publicUrlData } = supabaseAdmin.storage.from('pet-photos').getPublicUrl(uploadData.path);
+    const imageUrl = publicUrlData.publicUrl;
 
     const { data: insertData, error: insertError } = await supabaseAdmin
       .from('submissions')
@@ -171,24 +188,17 @@ Provide a full breed analysis as JSON.`;
       .select('id')
       .single();
 
-    if (insertError) {
-      console.error('DB insert error:', insertError);
-    }
+    if (insertError) console.error('DB insert error:', insertError);
 
-    const response: AnalyseAPIResponse = {
+    return Response.json({
       success: true,
       submissionId: insertData?.id,
       imageUrl,
       result: aiResult,
-    };
-
-    return Response.json(response);
+    } satisfies AnalyseAPIResponse);
   } catch (error) {
     console.error('Analyse route error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return Response.json(
-      { success: false, error: message } satisfies AnalyseAPIResponse,
-      { status: 500 }
-    );
+    return Response.json({ success: false, error: message } satisfies AnalyseAPIResponse, { status: 500 });
   }
 }
