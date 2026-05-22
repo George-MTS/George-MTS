@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
 import { anthropic } from '@/lib/anthropic';
+import { createServiceClient } from '@/lib/supabase';
 import { bufferToBase64 } from '@/lib/utils';
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
@@ -69,9 +71,7 @@ async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buf
   if (lower && !SUPPORTED_TYPES.has(lower) && !lower.startsWith('application/octet-stream')) {
     throw new Error('Please upload a JPG or PNG photo');
   }
-
   const bytes = Buffer.from(buffer);
-
   return sharp(bytes, { failOn: 'none' })
     .rotate()
     .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
@@ -124,6 +124,84 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
   }
 }
 
+async function saveToSupabase(
+  imageBuffer: Buffer,
+  result: RawResult,
+  fields: {
+    name: string; size: string; weight: string; coat: string;
+    ears: string; energy: string; birthday: string;
+  }
+): Promise<void> {
+  const supabase = createServiceClient();
+
+  console.log('[SCAN] Saving submission to Supabase...');
+  console.log('[SCAN] Supabase URL configured:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log('[SCAN] Service role key configured:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+  // Step 1: try to upload image — non-fatal if it fails
+  let imageUrl: string | null = null;
+  try {
+    const filename = `${Date.now()}_${uuidv4()}.jpg`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('pet-photos')
+      .upload(filename, imageBuffer, { contentType: 'image/jpeg', upsert: false });
+
+    if (uploadError) {
+      console.warn('[SCAN] Image upload failed (non-fatal):', uploadError.message);
+    } else {
+      const { data: urlData } = supabase.storage.from('pet-photos').getPublicUrl(uploadData.path);
+      imageUrl = urlData.publicUrl;
+      console.log('[SCAN] Image uploaded:', imageUrl);
+    }
+  } catch (uploadErr) {
+    console.warn('[SCAN] Image upload threw (non-fatal):', uploadErr instanceof Error ? uploadErr.message : uploadErr);
+  }
+
+  // Step 2: insert submission — always attempt regardless of image upload outcome
+  const traitsNotes = [
+    fields.size && `Size: ${fields.size}`,
+    fields.weight && `Weight: ${fields.weight}`,
+    fields.coat && `Coat: ${fields.coat}`,
+    fields.ears && `Ears: ${fields.ears}`,
+    fields.energy && `Energy: ${fields.energy}`,
+    fields.birthday && `Birthday: ${fields.birthday}`,
+  ].filter(Boolean).join(' | ') || null;
+
+  const row = {
+    pet_type: 'dog' as const,       // scan flow doesn't ask — default to dog
+    pet_name: fields.name || null,
+    breed_provided: null,
+    age: result.estimated_age_range || null,
+    origin: null,
+    owner_name: null,
+    twitter_handle: null,
+    traits_notes: traitsNotes,
+    image_url: imageUrl,
+    ai_breed_identified: result.primary_breed,
+    ai_confidence: typeof result.confidence === 'number' ? result.confidence : null,
+    ai_temperament: result.typical_temperament || null,
+    ai_care_notes: result.common_health_considerations || null,
+    ai_traits: null,
+    ai_fun_fact: result.fun_fact || null,
+    ai_origin: null,
+    raw_ai_response: result as unknown as Record<string, unknown>,
+  };
+
+  console.log('[SCAN] Inserting row into submissions table:', JSON.stringify({ ...row, raw_ai_response: '(omitted)' }));
+
+  const { data: insertData, error: insertError } = await supabase
+    .from('submissions')
+    .insert(row)
+    .select('id')
+    .single();
+
+  if (insertError) {
+    console.error('[SCAN] Supabase insert FAILED:', insertError.message, '| Code:', insertError.code, '| Details:', insertError.details, '| Hint:', insertError.hint);
+  } else {
+    console.log('[SCAN] Submission saved successfully. ID:', insertData?.id);
+  }
+}
+
 export async function POST(request: NextRequest): Promise<Response> {
   const usage = checkAndIncrement();
   if (!usage.allowed) {
@@ -159,22 +237,24 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
     const base64 = imageBuffer.toString('base64');
 
-    const name = (formData.get('name') as string) || '';
-    const size = (formData.get('size') as string) || '';
-    const weight = (formData.get('weight') as string) || '';
-    const coat = (formData.get('coat') as string) || '';
-    const ears = (formData.get('ears') as string) || '';
-    const energy = (formData.get('energy') as string) || '';
-    const birthday = (formData.get('birthday') as string) || '';
+    const fields = {
+      name: (formData.get('name') as string) || '',
+      size: (formData.get('size') as string) || '',
+      weight: (formData.get('weight') as string) || '',
+      coat: (formData.get('coat') as string) || '',
+      ears: (formData.get('ears') as string) || '',
+      energy: (formData.get('energy') as string) || '',
+      birthday: (formData.get('birthday') as string) || '',
+    };
 
     const context = [
-      name && `Name: ${name}`,
-      birthday && `Birthday: ${birthday}`,
-      size && `Size: ${size}`,
-      weight && `Weight: ${weight}`,
-      coat && `Coat type: ${coat}`,
-      ears && `Ear type: ${ears}`,
-      energy && `Energy level: ${energy}`,
+      fields.name && `Name: ${fields.name}`,
+      fields.birthday && `Birthday: ${fields.birthday}`,
+      fields.size && `Size: ${fields.size}`,
+      fields.weight && `Weight: ${fields.weight}`,
+      fields.coat && `Coat type: ${fields.coat}`,
+      fields.ears && `Ear type: ${fields.ears}`,
+      fields.energy && `Energy level: ${fields.energy}`,
     ].filter(Boolean).join('\n');
 
     let result = await callClaude(base64, context);
@@ -188,13 +268,19 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
     }
 
-    // Strip internal confidence field before returning (not part of BreedScanResult schema)
+    // Save to Supabase — non-blocking, errors are logged but don't fail the response
+    saveToSupabase(imageBuffer, result, fields).catch((err) => {
+      console.error('[SCAN] saveToSupabase threw unexpectedly:', err instanceof Error ? err.message : err);
+    });
+
+    // Strip internal confidence field before returning
     const { confidence: _conf, ...scanResult } = result;
     void _conf;
 
     return Response.json({ success: true, result: scanResult as BreedScanResult } satisfies ScanAPIResponse);
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[SCAN] Route error:', msg);
     return Response.json({ success: false, error: msg } satisfies ScanAPIResponse, { status: 500 });
   }
 }
