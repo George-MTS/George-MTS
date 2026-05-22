@@ -187,7 +187,7 @@ async function saveToSupabase(
     raw_ai_response: result as unknown as Record<string, unknown>,
   };
 
-  console.log('[SCAN] Inserting row into submissions table:', JSON.stringify({ ...row, raw_ai_response: '(omitted)' }));
+  console.log('SAVING TO SUPABASE', JSON.stringify({ ...row, raw_ai_response: '(omitted)' }, null, 2));
 
   const { data: insertData, error: insertError } = await supabase
     .from('submissions')
@@ -195,11 +195,7 @@ async function saveToSupabase(
     .select('id')
     .single();
 
-  if (insertError) {
-    console.error('[SCAN] Supabase insert FAILED:', insertError.message, '| Code:', insertError.code, '| Details:', insertError.details, '| Hint:', insertError.hint);
-  } else {
-    console.log('[SCAN] Submission saved successfully. ID:', insertData?.id);
-  }
+  console.log('SUPABASE RESULT:', JSON.stringify({ data: insertData, error: insertError }, null, 2));
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
