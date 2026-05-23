@@ -1,0 +1,628 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7A0600000000000000000001 /* DataWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000001 /* DataWatchApp.swift */; };
+		7A0600000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000002 /* AppDelegate.swift */; };
+		7A0600000000000000000003 /* AppUsageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000003 /* AppUsageModel.swift */; };
+		7A0600000000000000000004 /* DataUsageRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000004 /* DataUsageRecord.swift */; };
+		7A0600000000000000000005 /* AlertThreshold.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000005 /* AlertThreshold.swift */; };
+		7A0600000000000000000006 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000006 /* DashboardViewModel.swift */; };
+		7A0600000000000000000007 /* AppDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000007 /* AppDetailViewModel.swift */; };
+		7A0600000000000000000008 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000008 /* SettingsViewModel.swift */; };
+		7A0600000000000000000009 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000009 /* ContentView.swift */; };
+		7A060000000000000000000A /* PrivacyShieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000000A /* PrivacyShieldView.swift */; };
+		7A060000000000000000000B /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000000B /* DashboardView.swift */; };
+		7A060000000000000000000C /* DataUsageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000000C /* DataUsageCard.swift */; };
+		7A060000000000000000000D /* AppUsageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000000D /* AppUsageRow.swift */; };
+		7A060000000000000000000E /* BundleProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000000E /* BundleProgressView.swift */; };
+		7A060000000000000000000F /* AppDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000000F /* AppDetailView.swift */; };
+		7A0600000000000000000010 /* HourlyChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000010 /* HourlyChartView.swift */; };
+		7A0600000000000000000011 /* WeeklyChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000011 /* WeeklyChartView.swift */; };
+		7A0600000000000000000012 /* AppsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000012 /* AppsListView.swift */; };
+		7A0600000000000000000013 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000013 /* SettingsView.swift */; };
+		7A0600000000000000000014 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000014 /* NetworkMonitor.swift */; };
+		7A0600000000000000000015 /* DataUsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000015 /* DataUsageService.swift */; };
+		7A0600000000000000000016 /* MockDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000016 /* MockDataProvider.swift */; };
+		7A0600000000000000000017 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000017 /* NotificationService.swift */; };
+		7A0600000000000000000018 /* EncryptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000018 /* EncryptionService.swift */; };
+		7A0600000000000000000019 /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000019 /* CoreDataStack.swift */; };
+		7A060000000000000000001A /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000001A /* KeychainService.swift */; };
+		7A060000000000000000001B /* Color+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000001B /* Color+Theme.swift */; };
+		7A060000000000000000001C /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A020000000000000000001C /* View+Extensions.swift */; };
+		7A0700000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7A0300000000000000000001 /* Assets.xcassets */; };
+		7A0700000000000000000002 /* DataWatchModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 7A0300000000000000000002 /* DataWatchModel.xcdatamodeld */; };
+		7A0800000000000000000001 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000001 /* Network.framework */; };
+		7A0800000000000000000002 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000002 /* CoreData.framework */; };
+		7A0800000000000000000003 /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000003 /* UserNotifications.framework */; };
+		7A0800000000000000000004 /* BackgroundTasks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000004 /* BackgroundTasks.framework */; };
+		7A0800000000000000000005 /* CoreTelephony.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000005 /* CoreTelephony.framework */; };
+		7A0800000000000000000006 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000006 /* SystemConfiguration.framework */; };
+		7A0600000000000000000020 /* DataUsageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000020 /* DataUsageServiceTests.swift */; };
+		7A0600000000000000000021 /* EncryptionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000021 /* EncryptionServiceTests.swift */; };
+		7A0600000000000000000022 /* ViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000022 /* ViewModelTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7A0100000000000000000011 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7A0100000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7A0D00000000000000000001;
+			remoteInfo = DataWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		7A0500000000000000000001 /* DataWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DataWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A0500000000000000000002 /* DataWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DataWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A0200000000000000000001 /* DataWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWatchApp.swift; sourceTree = "<group>"; };
+		7A0200000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		7A0200000000000000000003 /* AppUsageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageModel.swift; sourceTree = "<group>"; };
+		7A0200000000000000000004 /* DataUsageRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataUsageRecord.swift; sourceTree = "<group>"; };
+		7A0200000000000000000005 /* AlertThreshold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertThreshold.swift; sourceTree = "<group>"; };
+		7A0200000000000000000006 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		7A0200000000000000000007 /* AppDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailViewModel.swift; sourceTree = "<group>"; };
+		7A0200000000000000000008 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		7A0200000000000000000009 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		7A020000000000000000000A /* PrivacyShieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldView.swift; sourceTree = "<group>"; };
+		7A020000000000000000000B /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		7A020000000000000000000C /* DataUsageCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataUsageCard.swift; sourceTree = "<group>"; };
+		7A020000000000000000000D /* AppUsageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUsageRow.swift; sourceTree = "<group>"; };
+		7A020000000000000000000E /* BundleProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleProgressView.swift; sourceTree = "<group>"; };
+		7A020000000000000000000F /* AppDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailView.swift; sourceTree = "<group>"; };
+		7A0200000000000000000010 /* HourlyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyChartView.swift; sourceTree = "<group>"; };
+		7A0200000000000000000011 /* WeeklyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyChartView.swift; sourceTree = "<group>"; };
+		7A0200000000000000000012 /* AppsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsListView.swift; sourceTree = "<group>"; };
+		7A0200000000000000000013 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		7A0200000000000000000014 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		7A0200000000000000000015 /* DataUsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataUsageService.swift; sourceTree = "<group>"; };
+		7A0200000000000000000016 /* MockDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDataProvider.swift; sourceTree = "<group>"; };
+		7A0200000000000000000017 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		7A0200000000000000000018 /* EncryptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionService.swift; sourceTree = "<group>"; };
+		7A0200000000000000000019 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
+		7A020000000000000000001A /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		7A020000000000000000001B /* Color+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Theme.swift"; sourceTree = "<group>"; };
+		7A020000000000000000001C /* View+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extensions.swift"; sourceTree = "<group>"; };
+		7A0300000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7A0300000000000000000002 /* DataWatchModel.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodeld; path = DataWatchModel.xcdatamodeld; sourceTree = "<group>"; };
+		7A0300000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7A0300000000000000000004 /* DataWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DataWatch.entitlements; sourceTree = "<group>"; };
+		7A0400000000000000000001 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
+		7A0400000000000000000002 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		7A0400000000000000000003 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		7A0400000000000000000004 /* BackgroundTasks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundTasks.framework; path = System/Library/Frameworks/BackgroundTasks.framework; sourceTree = SDKROOT; };
+		7A0400000000000000000005 /* CoreTelephony.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreTelephony.framework; path = System/Library/Frameworks/CoreTelephony.framework; sourceTree = SDKROOT; };
+		7A0400000000000000000006 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		7A0200000000000000000020 /* DataUsageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataUsageServiceTests.swift; sourceTree = "<group>"; };
+		7A0200000000000000000021 /* EncryptionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionServiceTests.swift; sourceTree = "<group>"; };
+		7A0200000000000000000022 /* ViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7A0A00000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A0800000000000000000001 /* Network.framework in Frameworks */,
+				7A0800000000000000000002 /* CoreData.framework in Frameworks */,
+				7A0800000000000000000003 /* UserNotifications.framework in Frameworks */,
+				7A0800000000000000000004 /* BackgroundTasks.framework in Frameworks */,
+				7A0800000000000000000005 /* CoreTelephony.framework in Frameworks */,
+				7A0800000000000000000006 /* SystemConfiguration.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A0A00000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7A0900000000000000000000 /* root */ = {
+			isa = PBXGroup;
+			children = (
+				7A0900000000000000000001 /* DataWatch */,
+				7A0900000000000000000011 /* DataWatchTests */,
+				7A0900000000000000000010 /* Frameworks */,
+				7A090000000000000000000F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7A090000000000000000000F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7A0500000000000000000001 /* DataWatch.app */,
+				7A0500000000000000000002 /* DataWatchTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000010 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7A0400000000000000000001 /* Network.framework */,
+				7A0400000000000000000002 /* CoreData.framework */,
+				7A0400000000000000000003 /* UserNotifications.framework */,
+				7A0400000000000000000004 /* BackgroundTasks.framework */,
+				7A0400000000000000000005 /* CoreTelephony.framework */,
+				7A0400000000000000000006 /* SystemConfiguration.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000001 /* DataWatch */ = {
+			isa = PBXGroup;
+			children = (
+				7A0900000000000000000002 /* App */,
+				7A0900000000000000000003 /* Models */,
+				7A0900000000000000000004 /* ViewModels */,
+				7A0900000000000000000005 /* Views */,
+				7A090000000000000000000B /* Services */,
+				7A090000000000000000000C /* Storage */,
+				7A090000000000000000000D /* Extensions */,
+				7A090000000000000000000E /* Resources */,
+				7A0300000000000000000003 /* Info.plist */,
+				7A0300000000000000000004 /* DataWatch.entitlements */,
+			);
+			path = DataWatch;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000002 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000001 /* DataWatchApp.swift */,
+				7A0200000000000000000002 /* AppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000003 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000003 /* AppUsageModel.swift */,
+				7A0200000000000000000004 /* DataUsageRecord.swift */,
+				7A0200000000000000000005 /* AlertThreshold.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000004 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000006 /* DashboardViewModel.swift */,
+				7A0200000000000000000007 /* AppDetailViewModel.swift */,
+				7A0200000000000000000008 /* SettingsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000005 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7A0900000000000000000006 /* Shared */,
+				7A0900000000000000000007 /* Dashboard */,
+				7A0900000000000000000008 /* AppDetail */,
+				7A0900000000000000000009 /* Apps */,
+				7A090000000000000000000A /* Settings */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000006 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000009 /* ContentView.swift */,
+				7A020000000000000000000A /* PrivacyShieldView.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000007 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				7A020000000000000000000B /* DashboardView.swift */,
+				7A020000000000000000000C /* DataUsageCard.swift */,
+				7A020000000000000000000D /* AppUsageRow.swift */,
+				7A020000000000000000000E /* BundleProgressView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000008 /* AppDetail */ = {
+			isa = PBXGroup;
+			children = (
+				7A020000000000000000000F /* AppDetailView.swift */,
+				7A0200000000000000000010 /* HourlyChartView.swift */,
+				7A0200000000000000000011 /* WeeklyChartView.swift */,
+			);
+			path = AppDetail;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000009 /* Apps */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000012 /* AppsListView.swift */,
+			);
+			path = Apps;
+			sourceTree = "<group>";
+		};
+		7A090000000000000000000A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000013 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		7A090000000000000000000B /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000014 /* NetworkMonitor.swift */,
+				7A0200000000000000000015 /* DataUsageService.swift */,
+				7A0200000000000000000016 /* MockDataProvider.swift */,
+				7A0200000000000000000017 /* NotificationService.swift */,
+				7A0200000000000000000018 /* EncryptionService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		7A090000000000000000000C /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000019 /* CoreDataStack.swift */,
+				7A020000000000000000001A /* KeychainService.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		7A090000000000000000000D /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				7A020000000000000000001B /* Color+Theme.swift */,
+				7A020000000000000000001C /* View+Extensions.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		7A090000000000000000000E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7A0300000000000000000001 /* Assets.xcassets */,
+				7A0300000000000000000002 /* DataWatchModel.xcdatamodeld */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		7A0900000000000000000011 /* DataWatchTests */ = {
+			isa = PBXGroup;
+			children = (
+				7A0200000000000000000020 /* DataUsageServiceTests.swift */,
+				7A0200000000000000000021 /* EncryptionServiceTests.swift */,
+				7A0200000000000000000022 /* ViewModelTests.swift */,
+			);
+			path = DataWatchTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7A0D00000000000000000001 /* DataWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A0C00000000000000000002 /* Build configuration list for PBXNativeTarget "DataWatch" */;
+			buildPhases = (
+				7A0A00000000000000000001 /* Sources */,
+				7A0A00000000000000000002 /* Resources */,
+				7A0A00000000000000000003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DataWatch;
+			productName = DataWatch;
+			productReference = 7A0500000000000000000001 /* DataWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7A0D00000000000000000002 /* DataWatchTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A0C00000000000000000003 /* Build configuration list for PBXNativeTarget "DataWatchTests" */;
+			buildPhases = (
+				7A0A00000000000000000004 /* Sources */,
+				7A0A00000000000000000005 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7A0100000000000000000010 /* PBXTargetDependency */,
+			);
+			name = DataWatchTests;
+			productName = DataWatchTests;
+			productReference = 7A0500000000000000000002 /* DataWatchTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7A0100000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					7A0D00000000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					7A0D00000000000000000002 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 7A0D00000000000000000001;
+					};
+				};
+			};
+			buildConfigurationList = 7A0C00000000000000000001 /* Build configuration list for PBXProject "DataWatch" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7A0900000000000000000000;
+			productRefGroup = 7A090000000000000000000F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7A0D00000000000000000001 /* DataWatch */,
+				7A0D00000000000000000002 /* DataWatchTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7A0A00000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A0700000000000000000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7A0A00000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A0600000000000000000001 /* DataWatchApp.swift in Sources */,
+				7A0600000000000000000002 /* AppDelegate.swift in Sources */,
+				7A0600000000000000000003 /* AppUsageModel.swift in Sources */,
+				7A0600000000000000000004 /* DataUsageRecord.swift in Sources */,
+				7A0600000000000000000005 /* AlertThreshold.swift in Sources */,
+				7A0600000000000000000006 /* DashboardViewModel.swift in Sources */,
+				7A0600000000000000000007 /* AppDetailViewModel.swift in Sources */,
+				7A0600000000000000000008 /* SettingsViewModel.swift in Sources */,
+				7A0600000000000000000009 /* ContentView.swift in Sources */,
+				7A060000000000000000000A /* PrivacyShieldView.swift in Sources */,
+				7A060000000000000000000B /* DashboardView.swift in Sources */,
+				7A060000000000000000000C /* DataUsageCard.swift in Sources */,
+				7A060000000000000000000D /* AppUsageRow.swift in Sources */,
+				7A060000000000000000000E /* BundleProgressView.swift in Sources */,
+				7A060000000000000000000F /* AppDetailView.swift in Sources */,
+				7A0600000000000000000010 /* HourlyChartView.swift in Sources */,
+				7A0600000000000000000011 /* WeeklyChartView.swift in Sources */,
+				7A0600000000000000000012 /* AppsListView.swift in Sources */,
+				7A0600000000000000000013 /* SettingsView.swift in Sources */,
+				7A0600000000000000000014 /* NetworkMonitor.swift in Sources */,
+				7A0600000000000000000015 /* DataUsageService.swift in Sources */,
+				7A0600000000000000000016 /* MockDataProvider.swift in Sources */,
+				7A0600000000000000000017 /* NotificationService.swift in Sources */,
+				7A0600000000000000000018 /* EncryptionService.swift in Sources */,
+				7A0600000000000000000019 /* CoreDataStack.swift in Sources */,
+				7A060000000000000000001A /* KeychainService.swift in Sources */,
+				7A060000000000000000001B /* Color+Theme.swift in Sources */,
+				7A060000000000000000001C /* View+Extensions.swift in Sources */,
+				7A0700000000000000000002 /* DataWatchModel.xcdatamodeld in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A0A00000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A0600000000000000000020 /* DataUsageServiceTests.swift in Sources */,
+				7A0600000000000000000021 /* EncryptionServiceTests.swift in Sources */,
+				7A0600000000000000000022 /* ViewModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7A0100000000000000000010 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7A0D00000000000000000001 /* DataWatch */;
+			targetProxy = 7A0100000000000000000011 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		7A0B00000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7A0B00000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		7A0B00000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "DataWatch/DataWatch.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "DataWatch/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.datawatch.DataWatch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		7A0B00000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "DataWatch/DataWatch.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "DataWatch/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.datawatch.DataWatch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7A0B00000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.datawatch.DataWatchTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DataWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DataWatch";
+			};
+			name = Debug;
+		};
+		7A0B00000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.datawatch.DataWatchTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DataWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DataWatch";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7A0C00000000000000000001 /* Build configuration list for PBXProject "DataWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A0B00000000000000000001 /* Debug */,
+				7A0B00000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7A0C00000000000000000002 /* Build configuration list for PBXNativeTarget "DataWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A0B00000000000000000003 /* Debug */,
+				7A0B00000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7A0C00000000000000000003 /* Build configuration list for PBXNativeTarget "DataWatchTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A0B00000000000000000005 /* Debug */,
+				7A0B00000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7A0100000000000000000001 /* Project object */;
+}
