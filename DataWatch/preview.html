@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataWatch — App Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:      #1B2A4A;
+    --card:      #223458;
+    --warm:      #F5F5F0;
+    --teal:      #3AAFA9;
+    --amber:     #F4A261;
+    --muted:     rgba(245,245,240,0.45);
+  }
+
+  body {
+    background: #0d1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 40px 20px;
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  /* iPhone frame */
+  .phone {
+    width: 375px;
+    background: var(--navy);
+    border-radius: 44px;
+    box-shadow: 0 0 0 2px #3a3a4a, 0 24px 80px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.08);
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* Status bar */
+  .status-bar {
+    background: var(--navy);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 24px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--warm);
+  }
+  .status-bar .notch {
+    width: 126px; height: 34px;
+    background: #000;
+    border-radius: 0 0 20px 20px;
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+  }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+
+  /* Screen content */
+  .screen {
+    height: 700px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    background: var(--navy);
+  }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* Navigation title */
+  .nav-title {
+    padding: 8px 20px 4px;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--warm);
+    letter-spacing: -0.5px;
+  }
+  .nav-subtitle {
+    padding: 0 20px 16px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Privacy shield */
+  .shield {
+    margin: 0 20px 16px;
+    background: rgba(58,175,169,0.12);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .shield-icon { font-size: 18px; }
+  .shield-text { flex: 1; }
+  .shield-text .line1 { font-size: 12px; font-weight: 500; color: var(--warm); }
+  .shield-text .line2 { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .shield-check { color: var(--teal); font-size: 14px; }
+
+  /* Cards row */
+  .cards-row {
+    display: flex;
+    gap: 12px;
+    padding: 0 20px 16px;
+  }
+  .usage-card {
+    flex: 1;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .card-icon { font-size: 13px; }
+  .card-label { font-size: 11px; color: var(--muted); }
+  .card-value { font-size: 22px; font-weight: 700; color: var(--warm); line-height: 1; }
+  .card-since { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* Bundle ring card */
+  .bundle-card {
+    margin: 0 20px 16px;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .ring-wrap { position: relative; width: 76px; height: 76px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--warm);
+    line-height: 1.1;
+  }
+  .ring-center small { font-size: 9px; color: var(--muted); font-weight: 400; }
+  .bundle-info .b-title { font-size: 15px; font-weight: 600; color: var(--warm); }
+  .bundle-info .b-sub { font-size: 11px; color: var(--muted); margin: 3px 0; }
+  .bundle-info .b-pct { font-size: 11px; color: var(--teal); }
+
+  /* Section label */
+  .section-label {
+    padding: 0 20px 10px;
+    font-size: 15px; font-weight: 600;
+    color: var(--warm);
+  }
+
+  /* App rows */
+  .app-row {
+    margin: 0 20px 8px;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .app-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .app-icon-wrap {
+    width: 40px; height: 40px;
+    background: rgba(58,175,169,0.18);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .app-meta { flex: 1; }
+  .app-name { font-size: 14px; font-weight: 500; color: var(--warm); }
+  .app-tags { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .tag-bg { font-size: 10px; color: var(--amber); display: flex; align-items: center; gap: 2px; }
+  .tag-cell { font-size: 10px; color: var(--teal); }
+  .tag-lbl { font-size: 10px; color: var(--muted); }
+  .app-total { font-size: 14px; font-weight: 600; color: var(--warm); }
+  .app-bar-track {
+    height: 4px; background: rgba(245,245,240,0.1);
+    border-radius: 2px; overflow: hidden;
+  }
+  .app-bar-fill { height: 100%; background: var(--teal); border-radius: 2px; }
+
+  /* Bottom tab bar */
+  .tab-bar {
+    background: var(--navy);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    padding: 8px 0 24px;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    font-size: 10px; color: var(--muted);
+    cursor: pointer; padding: 4px;
+    transition: color 0.2s;
+  }
+  .tab.active { color: var(--teal); }
+  .tab-icon { font-size: 20px; }
+
+  /* ===== Apps list screen ===== */
+  .search-bar {
+    margin: 8px 20px 14px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); font-size: 14px;
+  }
+
+  /* ===== Settings screen ===== */
+  .settings-section { margin-bottom: 28px; }
+  .settings-header {
+    padding: 0 20px 6px;
+    font-size: 11px; font-weight: 500;
+    color: var(--muted); letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .setting-row {
+    margin: 0 20px 1px;
+    background: var(--card);
+    padding: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .setting-row:first-of-type { border-radius: 14px 14px 0 0; }
+  .setting-row:last-of-type { border-radius: 0 0 14px 14px; margin-bottom: 0; }
+  .setting-row.solo { border-radius: 14px; }
+  .setting-label { font-size: 14px; color: var(--warm); }
+  .setting-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .setting-value { font-size: 14px; color: var(--teal); font-weight: 500; }
+  .toggle {
+    width: 48px; height: 28px;
+    background: var(--teal);
+    border-radius: 14px;
+    position: relative;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    top: 3px; right: 3px;
+    width: 22px; height: 22px;
+    background: white; border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .toggle.off { background: rgba(255,255,255,0.15); }
+  .toggle.off::after { right: auto; left: 3px; }
+  .privacy-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .privacy-icon { font-size: 16px; color: var(--teal); }
+  .danger-label { font-size: 14px; color: #ff453a; }
+
+  /* Screen switcher */
+  .switcher {
+    text-align: center; margin-bottom: 16px;
+    color: #8a8a9a; font-size: 13px;
+  }
+
+  /* Legend panel */
+  .legend {
+    width: 340px;
+    color: var(--warm);
+    align-self: flex-start;
+    margin-top: 60px;
+  }
+  .legend h2 { font-size: 24px; font-weight: 700; color: white; margin-bottom: 6px; }
+  .legend .tagline { font-size: 14px; color: #9aafca; margin-bottom: 28px; line-height: 1.5; }
+  .feature { display: flex; gap: 14px; margin-bottom: 20px; align-items: flex-start; }
+  .feature-icon {
+    width: 40px; height: 40px; flex-shrink: 0;
+    background: rgba(58,175,169,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .feature-text h4 { font-size: 14px; font-weight: 600; color: white; margin-bottom: 3px; }
+  .feature-text p { font-size: 12px; color: #7a9ab8; line-height: 1.5; }
+  .palette { display: flex; gap: 8px; margin-top: 28px; flex-wrap: wrap; }
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-size: 10px; color: #7a9ab8;
+  }
+  .swatch-box { width: 40px; height: 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); }
+
+  /* Shimmer animation for loading feel */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .live-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--teal); border-radius: 50%;
+    margin-right: 4px; vertical-align: middle;
+    animation: pulse 2s infinite;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======= PHONE 1: DASHBOARD ======= -->
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+  <div style="color:#8a8a9a;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Dashboard</div>
+  <div class="phone">
+    <div class="status-bar">
+      <div class="notch"></div>
+      <span style="padding-left:8px;">9:41</span>
+      <div class="status-icons">
+        <span>●●●</span>
+        <span>WiFi</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-dashboard">
+      <div class="nav-title">DataWatch</div>
+
+      <!-- Privacy shield -->
+      <div class="shield">
+        <div class="shield-icon" style="color:var(--teal)">🔒</div>
+        <div class="shield-text">
+          <div class="line1">Your data never leaves your phone</div>
+          <div class="line2"><span class="live-dot"></span>AES-256 encrypted · Updated just now</div>
+        </div>
+        <div class="shield-check">✓</div>
+      </div>
+
+      <!-- Usage cards -->
+      <div class="cards-row">
+        <div class="usage-card">
+          <div class="card-header">
+            <div class="card-icon" style="color:var(--teal)">📡</div>
+            <div class="card-label" style="color:var(--teal)">Cellular</div>
+          </div>
+          <div class="card-value">487 MB</div>
+          <div class="card-since">Today</div>
+        </div>
+        <div class="usage-card">
+          <div class="card-header">
+            <div class="card-icon" style="color:var(--amber)">📶</div>
+            <div class="card-label" style="color:var(--amber)">Wi-Fi</div>
+          </div>
+          <div class="card-value">1.2 GB</div>
+          <div class="card-since">Today</div>
+        </div>
+      </div>
+
+      <!-- Bundle ring -->
+      <div class="bundle-card">
+        <div class="ring-wrap">
+          <svg width="76" height="76" viewBox="0 0 76 76">
+            <circle cx="38" cy="38" r="30" fill="none" stroke="rgba(245,245,240,0.1)" stroke-width="8"/>
+            <circle cx="38" cy="38" r="30" fill="none"
+              stroke="#3AAFA9" stroke-width="8"
+              stroke-dasharray="188.5" stroke-dashoffset="51"
+              stroke-linecap="round"/>
+          </svg>
+          <div class="ring-center">72%<small>left</small></div>
+        </div>
+        <div class="bundle-info">
+          <div class="b-title">Data Bundle</div>
+          <div class="b-sub">Estimated remaining</div>
+          <div class="b-pct">72% of your monthly bundle remaining</div>
+        </div>
+      </div>
+
+      <!-- Top apps -->
+      <div class="section-label">Top Apps Today</div>
+
+      <!-- App rows -->
+      <div class="app-row">
+        <div class="app-header">
+          <div class="app-icon-wrap">▶️</div>
+          <div class="app-meta">
+            <div class="app-name">YouTube</div>
+            <div class="app-tags">
+              <span class="tag-bg">🌙 28% bg</span>
+              <span class="tag-cell">112 MB</span>
+              <span class="tag-lbl">cellular</span>
+            </div>
+          </div>
+          <div class="app-total">148 MB</div>
+        </div>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:100%"></div></div>
+      </div>
+
+      <div class="app-row">
+        <div class="app-header">
+          <div class="app-icon-wrap">💬</div>
+          <div class="app-meta">
+            <div class="app-name">WhatsApp</div>
+            <div class="app-tags">
+              <span class="tag-bg">🌙 34% bg</span>
+              <span class="tag-cell">79 MB</span>
+              <span class="tag-lbl">cellular</span>
+            </div>
+          </div>
+          <div class="app-total">124 MB</div>
+        </div>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:84%"></div></div>
+      </div>
+
+      <div class="app-row">
+        <div class="app-header">
+          <div class="app-icon-wrap">📸</div>
+          <div class="app-meta">
+            <div class="app-name">Instagram</div>
+            <div class="app-tags">
+              <span class="tag-bg">🌙 19% bg</span>
+              <span class="tag-cell">68 MB</span>
+              <span class="tag-lbl">cellular</span>
+            </div>
+          </div>
+          <div class="app-total">107 MB</div>
+        </div>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:72%"></div></div>
+      </div>
+
+      <div class="app-row">
+        <div class="app-header">
+          <div class="app-icon-wrap">🌐</div>
+          <div class="app-meta">
+            <div class="app-name">Safari</div>
+            <div class="app-tags">
+              <span class="tag-cell">54 MB</span>
+              <span class="tag-lbl">cellular</span>
+            </div>
+          </div>
+          <div class="app-total">89 MB</div>
+        </div>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:60%"></div></div>
+      </div>
+
+      <div class="app-row">
+        <div class="app-header">
+          <div class="app-icon-wrap">🎵</div>
+          <div class="app-meta">
+            <div class="app-name">TikTok</div>
+            <div class="app-tags">
+              <span class="tag-bg">🌙 41% bg</span>
+              <span class="tag-cell">47 MB</span>
+              <span class="tag-lbl">cellular</span>
+            </div>
+          </div>
+          <div class="app-total">74 MB</div>
+        </div>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:50%"></div></div>
+      </div>
+
+      <div class="app-row">
+        <div class="app-header">
+          <div class="app-icon-wrap">🎧</div>
+          <div class="app-meta">
+            <div class="app-name">Spotify</div>
+            <div class="app-tags">
+              <span class="tag-bg">🌙 22% bg</span>
+              <span class="tag-cell">38 MB</span>
+              <span class="tag-lbl">cellular</span>
+            </div>
+          </div>
+          <div class="app-total">61 MB</div>
+        </div>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:41%"></div></div>
+      </div>
+
+      <div style="height:16px"></div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <div class="tab active"><div class="tab-icon">📊</div>Dashboard</div>
+      <div class="tab"><div class="tab-icon">⊞</div>Apps</div>
+      <div class="tab"><div class="tab-icon">⚙️</div>Settings</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PHONE 2: APP DETAIL ======= -->
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+  <div style="color:#8a8a9a;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">App Detail</div>
+  <div class="phone">
+    <div class="status-bar">
+      <div class="notch"></div>
+      <span style="padding-left:8px;">9:41</span>
+      <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+    </div>
+
+    <div class="screen">
+      <!-- Nav back -->
+      <div style="padding:6px 20px 2px;color:var(--teal);font-size:14px;">← Dashboard</div>
+      <div class="nav-title" style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:22px;background:rgba(58,175,169,0.18);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">▶️</span>
+        YouTube
+      </div>
+
+      <!-- Header card -->
+      <div class="app-row" style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:56px;height:56px;background:rgba(58,175,169,0.18);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;">▶️</div>
+          <div>
+            <div style="font-size:17px;font-weight:700;color:var(--warm);">YouTube</div>
+            <div style="font-size:13px;color:var(--teal);margin-top:2px;">Total today: 148 MB</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;">com.google.ios.youtube</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Usage breakdown -->
+      <div class="app-row" style="margin-top:8px;">
+        <div style="font-size:14px;font-weight:600;color:var(--warm);margin-bottom:12px;">Usage Breakdown</div>
+        <div style="display:flex;gap:16px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <span style="color:var(--teal);font-size:14px;">📡</span>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--warm);">112 MB</div>
+              <div style="font-size:10px;color:var(--muted);">Cellular</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <span style="color:var(--amber);font-size:14px;">📶</span>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--warm);">36 MB</div>
+              <div style="font-size:10px;color:var(--muted);">Wi-Fi</div>
+            </div>
+          </div>
+        </div>
+        <div style="height:1px;background:rgba(245,245,240,0.08);margin-bottom:14px;"></div>
+        <div style="display:flex;gap:16px;">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <span style="color:var(--teal);font-size:14px;">☀️</span>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--warm);">72%</div>
+              <div style="font-size:10px;color:var(--muted);">Foreground</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <span style="color:var(--amber);font-size:14px;">🌙</span>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--warm);">28%</div>
+              <div style="font-size:10px;color:var(--muted);">Background</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hourly chart -->
+      <div class="app-row" style="margin-top:8px;">
+        <div style="font-size:14px;font-weight:600;color:var(--warm);margin-bottom:14px;">Hourly Usage Today</div>
+        <div style="display:flex;align-items:flex-end;gap:3px;height:90px;padding-bottom:16px;position:relative;">
+          <!-- Hour bars (0–9 shown) -->
+          <svg width="100%" height="90" style="position:absolute;inset:0;">
+            <rect x="0%"   y="85" width="5%" height="5"  rx="2" fill="#3AAFA9" opacity="0.4"/>
+            <rect x="7%"   y="82" width="5%" height="8"  rx="2" fill="#3AAFA9" opacity="0.4"/>
+            <rect x="14%"  y="78" width="5%" height="12" rx="2" fill="#3AAFA9" opacity="0.4"/>
+            <rect x="21%"  y="70" width="5%" height="20" rx="2" fill="#3AAFA9" opacity="0.5"/>
+            <rect x="28%"  y="55" width="5%" height="35" rx="2" fill="#3AAFA9" opacity="0.6"/>
+            <rect x="35%"  y="40" width="5%" height="50" rx="2" fill="#3AAFA9" opacity="0.7"/>
+            <rect x="42%"  y="20" width="5%" height="70" rx="2" fill="#3AAFA9"/>
+            <rect x="49%"  y="10" width="5%" height="80" rx="2" fill="#3AAFA9"/>
+            <rect x="56%"  y="30" width="5%" height="60" rx="2" fill="#3AAFA9" opacity="0.8"/>
+            <rect x="63%"  y="50" width="5%" height="40" rx="2" fill="#3AAFA9" opacity="0.6"/>
+            <rect x="70%"  y="60" width="5%" height="30" rx="2" fill="#3AAFA9" opacity="0.5"/>
+            <rect x="77%"  y="65" width="5%" height="25" rx="2" fill="#3AAFA9" opacity="0.45"/>
+            <rect x="84%"  y="72" width="5%" height="18" rx="2" fill="#3AAFA9" opacity="0.4"/>
+            <rect x="91%"  y="80" width="5%" height="10" rx="2" fill="#3AAFA9" opacity="0.35"/>
+            <!-- Hour labels -->
+            <text x="0%"   y="90" font-size="8" fill="rgba(245,245,240,0.4)" font-family="-apple-system">0h</text>
+            <text x="35%"  y="90" font-size="8" fill="rgba(245,245,240,0.4)" font-family="-apple-system">6h</text>
+            <text x="70%"  y="90" font-size="8" fill="rgba(245,245,240,0.4)" font-family="-apple-system">12h</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Weekly chart -->
+      <div class="app-row" style="margin-top:8px;">
+        <div style="font-size:14px;font-weight:600;color:var(--warm);margin-bottom:14px;">Past 7 Days</div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:90px;padding-bottom:18px;position:relative;">
+          <svg width="100%" height="90" style="position:absolute;inset:0;">
+            <rect x="1%"   y="65" width="12%" height="25" rx="3" fill="#3AAFA9" opacity="0.65"/>
+            <rect x="15%"  y="50" width="12%" height="40" rx="3" fill="#3AAFA9" opacity="0.70"/>
+            <rect x="29%"  y="30" width="12%" height="60" rx="3" fill="#3AAFA9" opacity="0.80"/>
+            <rect x="43%"  y="20" width="12%" height="70" rx="3" fill="#3AAFA9" opacity="0.85"/>
+            <rect x="57%"  y="40" width="12%" height="50" rx="3" fill="#3AAFA9" opacity="0.75"/>
+            <rect x="71%"  y="15" width="12%" height="75" rx="3" fill="#3AAFA9" opacity="0.90"/>
+            <rect x="85%"  y="10" width="12%" height="80" rx="3" fill="#3AAFA9"/>
+            <!-- Day labels -->
+            <text x="2%"  y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Mon</text>
+            <text x="16%" y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Tue</text>
+            <text x="30%" y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Wed</text>
+            <text x="44%" y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Thu</text>
+            <text x="58%" y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Fri</text>
+            <text x="72%" y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Sat</text>
+            <text x="86%" y="90" font-size="9" fill="rgba(245,245,240,0.6)" font-family="-apple-system">Sun</text>
+          </svg>
+        </div>
+      </div>
+
+      <div style="height:16px"></div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active"><div class="tab-icon">📊</div>Dashboard</div>
+      <div class="tab"><div class="tab-icon">⊞</div>Apps</div>
+      <div class="tab"><div class="tab-icon">⚙️</div>Settings</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PHONE 3: SETTINGS ======= -->
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+  <div style="color:#8a8a9a;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Settings</div>
+  <div class="phone">
+    <div class="status-bar">
+      <div class="notch"></div>
+      <span style="padding-left:8px;">9:41</span>
+      <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+    </div>
+
+    <div class="screen">
+      <div class="nav-title">Settings</div>
+      <div style="height:8px"></div>
+
+      <!-- Alerts section -->
+      <div class="settings-section">
+        <div class="settings-header">Alerts</div>
+        <div class="setting-row" style="border-radius:14px 14px 0 0;">
+          <div>
+            <div class="setting-label">Daily Threshold</div>
+            <div class="setting-sub">Alert when daily cellular exceeds this</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-size:16px;color:var(--teal);font-weight:600;background:rgba(58,175,169,0.1);padding:4px 10px;border-radius:8px;">500</div>
+            <div style="font-size:13px;color:var(--muted);">MB</div>
+          </div>
+        </div>
+        <div class="setting-row" style="border-radius:0 0 14px 14px;">
+          <div>
+            <div class="setting-label">Notifications</div>
+            <div class="setting-sub">Alert when thresholds are exceeded</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+      </div>
+
+      <!-- Privacy section -->
+      <div class="settings-section">
+        <div class="settings-header">Privacy</div>
+        <div class="setting-row" style="border-radius:14px 14px 0 0;">
+          <div class="privacy-row">
+            <span class="privacy-icon">🔒</span>
+            <div class="setting-label">All data stored locally on device</div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="privacy-row">
+            <span class="privacy-icon">🔑</span>
+            <div class="setting-label">AES-256 encrypted via CryptoKit</div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="privacy-row">
+            <span class="privacy-icon">🚫</span>
+            <div class="setting-label">No external connections ever made</div>
+          </div>
+        </div>
+        <div class="setting-row" style="border-radius:0 0 14px 14px;">
+          <div class="privacy-row">
+            <span class="privacy-icon">👤</span>
+            <div class="setting-label">No account or login required</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data section -->
+      <div class="settings-section">
+        <div class="settings-header">Data</div>
+        <div class="setting-row solo">
+          <div class="privacy-row">
+            <span style="font-size:16px;">🗑️</span>
+            <div class="danger-label">Reset All Data</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App version info -->
+      <div style="text-align:center;padding:8px 20px 20px;color:var(--muted);font-size:11px;line-height:1.7;">
+        DataWatch v1.0 (1)<br>
+        Built for Safaricom users in Kenya<br>
+        <span style="color:var(--teal);">Zero data leaves your device · Ever</span>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab"><div class="tab-icon">📊</div>Dashboard</div>
+      <div class="tab"><div class="tab-icon">⊞</div>Apps</div>
+      <div class="tab active"><div class="tab-icon">⚙️</div>Settings</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= Legend ======= -->
+<div class="legend">
+  <h2>DataWatch</h2>
+  <p class="tagline">Real-time cellular &amp; Wi-Fi data usage tracker built for Safaricom users in Kenya. Everything stays on your iPhone — encrypted, private, zero servers.</p>
+
+  <div class="feature">
+    <div class="feature-icon">📊</div>
+    <div class="feature-text">
+      <h4>Live Dashboard</h4>
+      <p>Top apps ranked by data usage. Background vs. foreground split. Progress bar per app. Cellular and Wi-Fi totals side by side.</p>
+    </div>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">📈</div>
+    <div class="feature-text">
+      <h4>App Breakdown Charts</h4>
+      <p>Hourly usage chart for today. 7-day cumulative view. Foreground/background percentage split. Built with native SwiftUI — no chart libraries.</p>
+    </div>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🔔</div>
+    <div class="feature-text">
+      <h4>Smart Local Alerts</h4>
+      <p>Notifies when any single app exceeds 50 MB or your daily threshold is hit. Local push only — no external server ever touched.</p>
+    </div>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🔒</div>
+    <div class="feature-text">
+      <h4>AES-256 Privacy</h4>
+      <p>All CoreData records encrypted before writing. Key stored in iOS Keychain. Entitlements explicitly block outbound network access.</p>
+    </div>
+  </div>
+
+  <!-- Colour palette swatches -->
+  <div style="margin-top:24px;font-size:11px;color:#7a9ab8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Colour palette</div>
+  <div class="palette">
+    <div class="swatch">
+      <div class="swatch-box" style="background:#1B2A4A;"></div>
+      <span>#1B2A4A</span><span style="color:#4a6080;">Navy</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#223458;"></div>
+      <span>#223458</span><span style="color:#4a6080;">Card</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#3AAFA9;"></div>
+      <span>#3AAFA9</span><span style="color:#4a6080;">Teal</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#F4A261;"></div>
+      <span>#F4A261</span><span style="color:#4a6080;">Amber</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#F5F5F0;border:1px solid rgba(255,255,255,0.2);"></div>
+      <span>#F5F5F0</span><span style="color:#4a6080;">Text</span>
+    </div>
+  </div>
+
+  <div style="margin-top:28px;padding:14px;background:rgba(58,175,169,0.08);border-radius:12px;border:1px solid rgba(58,175,169,0.2);">
+    <div style="font-size:12px;color:var(--teal);font-weight:600;margin-bottom:6px;">Open in Xcode</div>
+    <code style="font-size:11px;color:#9aafca;display:block;line-height:1.8;">
+      cd George-MTS/DataWatch<br>
+      open DataWatch.xcodeproj
+    </code>
+    <div style="font-size:11px;color:#7a9ab8;margin-top:8px;">Then hit ⌘R on any iPhone simulator (iOS 16+)</div>
+  </div>
+</div>
+
+</body>
+</html>
