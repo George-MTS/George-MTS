@@ -13,7 +13,11 @@ struct HourlyChartView: View {
                         let ratio = maxBytes > 0 ? CGFloat(point.bytes) / CGFloat(maxBytes) : 0
                         Spacer(minLength: 0)
                         RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.dwTeal)
+                            .fill(LinearGradient(
+                                colors: [Color.dwTeal, Color.dwAmber],
+                                startPoint: .bottom,
+                                endPoint: .top
+                            ))
                             .frame(height: max(2, (outer.size.height - 20) * ratio))
                         if point.hour % 6 == 0 {
                             Text("\(point.hour)h")

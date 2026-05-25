@@ -32,7 +32,7 @@ struct AppUsageRow: View {
                                 systemImage: "moon.fill"
                             )
                             .font(.system(.caption2))
-                            .foregroundColor(Color.dwAmber)
+                            .foregroundColor(Color.dwTeal)
                         }
                         Text(app.formattedCellular)
                             .font(.system(.caption2))
@@ -56,7 +56,11 @@ struct AppUsageRow: View {
                         .fill(Color.dwWarmWhite.opacity(0.1))
                         .frame(height: 4)
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.dwTeal)
+                        .fill(LinearGradient(
+                            colors: [Color.dwTeal, Color.dwAmber],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
                         .frame(width: geo.size.width * barFraction, height: 4)
                 }
             }

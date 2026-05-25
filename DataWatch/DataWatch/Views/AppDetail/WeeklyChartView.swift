@@ -13,7 +13,11 @@ struct WeeklyChartView: View {
                         let ratio = maxBytes > 0 ? CGFloat(point.bytes) / CGFloat(maxBytes) : 0
                         Spacer(minLength: 0)
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.dwTeal.opacity(0.85))
+                            .fill(LinearGradient(
+                                colors: [Color.dwTeal, Color.dwAmber],
+                                startPoint: .bottom,
+                                endPoint: .top
+                            ))
                             .frame(height: max(4, (outer.size.height - 24) * ratio))
                         Text(point.dayLabel)
                             .font(.system(.caption2, design: .default, weight: .medium))

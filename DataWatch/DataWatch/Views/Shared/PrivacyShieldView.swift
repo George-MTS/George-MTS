@@ -12,7 +12,7 @@ struct PrivacyShieldView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "lock.shield.fill")
-                .foregroundColor(Color.dwTeal)
+                .foregroundColor(Color.dwAmber)
                 .font(.system(size: 20))
 
             VStack(alignment: .leading, spacing: 2) {
@@ -28,11 +28,11 @@ struct PrivacyShieldView: View {
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(Color.dwTeal)
+                .foregroundColor(Color.dwAmber)
                 .font(.system(size: 14))
         }
         .padding(12)
-        .background(Color.dwTeal.opacity(0.12))
+        .background(Color.dwAmber.opacity(0.10))
         .cornerRadius(10)
         .padding(.horizontal, 20)
     }

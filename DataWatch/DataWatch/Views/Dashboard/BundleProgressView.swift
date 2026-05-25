@@ -5,9 +5,9 @@ struct BundleProgressView: View {
 
     private var ringColor: Color {
         switch remainingPercentage {
-        case 0.5...: return Color.dwTeal
-        case 0.2..<0.5: return Color.dwAmber
-        default: return .red
+        case 0.5...: return Color.dwAmber    // mint green — healthy level
+        case 0.2..<0.5: return Color.dwTeal  // amber gold — getting low
+        default: return Color.dwWarning       // red — critical
         }
     }
 

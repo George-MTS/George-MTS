@@ -39,7 +39,7 @@ struct SettingsView: View {
                                     .foregroundColor(Color.dwWarmWhite.opacity(0.5))
                             }
                         }
-                        .tint(Color.dwTeal)
+                        .tint(Color.dwAmber)
                         .listRowBackground(Color.dwCardBg)
                         .onChange(of: viewModel.notificationsEnabled) { _ in viewModel.saveSettings() }
                     } header: {
@@ -49,16 +49,16 @@ struct SettingsView: View {
                     // MARK: Privacy
                     Section {
                         Label("All data stored locally on device", systemImage: "lock.shield.fill")
-                            .foregroundColor(Color.dwTeal)
+                            .foregroundColor(Color.dwAmber)
                             .listRowBackground(Color.dwCardBg)
                         Label("AES-256 encrypted via CryptoKit", systemImage: "key.fill")
-                            .foregroundColor(Color.dwTeal)
+                            .foregroundColor(Color.dwAmber)
                             .listRowBackground(Color.dwCardBg)
-                        Label("No external connections ever made", systemImage: "wifi.slash")
-                            .foregroundColor(Color.dwTeal)
+                        Label("No external connections ever made", systemImage: "xmark.circle.fill")
+                            .foregroundColor(Color.dwAmber)
                             .listRowBackground(Color.dwCardBg)
                         Label("No account or login required", systemImage: "person.slash")
-                            .foregroundColor(Color.dwTeal)
+                            .foregroundColor(Color.dwAmber)
                             .listRowBackground(Color.dwCardBg)
                     } header: {
                         Text("PRIVACY").foregroundColor(Color.dwWarmWhite.opacity(0.5))

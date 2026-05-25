@@ -68,9 +68,9 @@ struct AppDetailView: View {
             Divider().background(Color.dwWarmWhite.opacity(0.1))
             HStack(spacing: 20) {
                 usageChip(label: "Foreground", value: viewModel.foregroundPercentageString,
-                          icon: "sun.max.fill", color: Color.dwTeal)
+                          icon: "sun.max.fill", color: Color.dwAmber)
                 usageChip(label: "Background", value: viewModel.backgroundPercentageString,
-                          icon: "moon.fill", color: Color.dwAmber)
+                          icon: "moon.fill", color: Color.dwTeal)
             }
         }
         .cardStyle()
