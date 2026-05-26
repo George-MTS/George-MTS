@@ -9,6 +9,9 @@ import type { BreedScanResult, ScanAPIResponse } from '@/types';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
+console.log('[SCAN] RESEND_KEY present:', !!process.env.RESEND_API_KEY);
+console.log('[SCAN] NOTIFICATION_EMAIL:', process.env.NOTIFICATION_EMAIL ?? 'not set');
+
 export const config = {
   api: { bodyParser: { sizeLimit: '25mb' } },
 };
@@ -145,6 +148,7 @@ async function sendNotificationEmail(data: {
     return;
   }
 
+  console.log('[SCAN] Attempting to send email to:', to);
   const resend = new Resend(process.env.RESEND_API_KEY);
   const subject = `New PawPrint Submission — ${data.petName || 'Unknown'} the ${data.breedIdentified}`;
   const timestamp = new Date().toISOString();
@@ -162,15 +166,17 @@ async function sendNotificationEmail(data: {
     </table>
   `;
 
-  const { error } = await resend.emails.send({
+  const result = await resend.emails.send({
     from: 'onboarding@resend.dev',
     to,
     subject,
     html,
   });
 
-  if (error) {
-    console.error('[SCAN] Resend email failed:', error);
+  console.log('[SCAN] Resend response:', JSON.stringify(result));
+
+  if (result.error) {
+    console.error('[SCAN] Resend email failed:', result.error);
   } else {
     console.log('[SCAN] Notification email sent to', to);
   }
