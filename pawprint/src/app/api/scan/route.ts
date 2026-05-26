@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import sharp from 'sharp';
 import { Resend } from 'resend';
-import { anthropic } from '@/lib/anthropic';
+import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { checkIpLimit } from '@/lib/ipRateLimit';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
@@ -12,10 +13,8 @@ export const dynamic = 'force-dynamic';
 
 console.log('[SCAN] RESEND_KEY present:', !!process.env.RESEND_API_KEY);
 console.log('[SCAN] NOTIFICATION_EMAIL:', process.env.NOTIFICATION_EMAIL ?? 'not set');
-
-export const config = {
-  api: { bodyParser: { sizeLimit: '25mb' } },
-};
+console.log('[SCAN] SUPABASE_URL present:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log('[SCAN] SERVICE_ROLE_KEY present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const SYSTEM_PROMPT = `You are the world's most accurate dog and cat breed identification expert.
 You have encyclopedic knowledge of every AKC, KC, and FCI registered breed,
@@ -53,7 +52,7 @@ Respond ONLY with a valid JSON object. No preamble. No markdown. No backticks. R
 The JSON must have these exact fields:
 primary_breed, secondary_breed (string or null), breed_percentage (string or null),
 coat_description, estimated_age_range, size_category, typical_temperament,
-common_health_considerations, fun_fact`;
+common_health_considerations, fun_fact, confidence (number 0-100)`;
 
 const LOW_CONFIDENCE_RETRY = `Your confidence was below 60%. Please look more carefully at:
 1. The ear set and length relative to the skull
@@ -73,16 +72,23 @@ const SUPPORTED_TYPES = new Set([
   'image/heif',
 ]);
 
-async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buffer> {
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
+
+async function compressImage(buffer: ArrayBuffer, mimeType: string): Promise<Buffer> {
   const lower = mimeType.toLowerCase();
   if (lower && !SUPPORTED_TYPES.has(lower) && !lower.startsWith('application/octet-stream')) {
     throw new Error('Please upload a JPG or PNG photo');
   }
-  const bytes = Buffer.from(buffer);
-  return sharp(bytes, { failOn: 'none' })
+  return sharp(Buffer.from(buffer), { failOn: 'none' })
     .rotate()
-    .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 85 })
+    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
     .toBuffer();
 }
 
@@ -91,11 +97,13 @@ interface RawResult extends BreedScanResult {
 }
 
 async function callClaude(base64: string, context: string, retryPrompt?: string): Promise<RawResult> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
   const userText = retryPrompt
     ? retryPrompt
     : `Look carefully at this pet photo. Take your time to examine all visible features before responding.\n\nOwner-provided context:\n${context || 'None provided'}\n\nReturn ONLY raw JSON.`;
 
-  const response = await anthropic.messages.create({
+  const response = await client.messages.create({
     model: 'claude-sonnet-4-5',
     max_tokens: 1200,
     system: SYSTEM_PROMPT,
@@ -103,10 +111,7 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
       {
         role: 'user',
         content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: 'image/jpeg', data: base64 },
-          },
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
           { type: 'text', text: userText },
         ],
       },
@@ -119,15 +124,41 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
   let text = content.text.trim();
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) text = fence[1].trim();
-
   const objMatch = text.match(/\{[\s\S]*\}/);
   if (objMatch) text = objMatch[0];
 
   try {
     return JSON.parse(text) as RawResult;
   } catch {
-    console.error('[SCAN] Claude returned non-JSON response:', content.text);
+    console.error('[SCAN] Claude returned non-JSON:', content.text);
     throw new Error('AI returned an unexpected response — please try again');
+  }
+}
+
+async function saveToSupabase(fields: Record<string, string>, result: RawResult): Promise<void> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    console.log('[SCAN] Supabase env vars missing — skipping DB save');
+    return;
+  }
+
+  const supabase = createClient(url, key);
+  const { error } = await supabase.from('submissions').insert({
+    pet_type: 'dog',
+    pet_name: fields.name || null,
+    ai_breed_identified: result.primary_breed,
+    ai_confidence: result.confidence ?? null,
+    ai_temperament: result.typical_temperament,
+    ai_care_notes: result.common_health_considerations,
+    ai_fun_fact: result.fun_fact,
+    raw_ai_response: result,
+  });
+
+  if (error) {
+    console.error('[SCAN] Supabase insert error:', JSON.stringify(error));
+  } else {
+    console.log('[SCAN] Supabase insert succeeded');
   }
 }
 
@@ -151,44 +182,32 @@ async function sendNotificationEmail(data: {
 
   console.log('[SCAN] Attempting to send email to:', to);
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const subject = `New PawPrint Submission — ${data.petName || 'Unknown'} the ${data.breedIdentified}`;
   const timestamp = new Date().toISOString();
-
-  const html = `
-    <h2>🐾 New PawPrint Submission</h2>
-    <table style="border-collapse:collapse;font-family:monospace;font-size:14px">
-      <tr><td style="padding:6px 16px 6px 0;color:#888">Timestamp</td><td>${timestamp}</td></tr>
-      <tr><td style="padding:6px 16px 6px 0;color:#888">Pet Name</td><td>${data.petName || '—'}</td></tr>
-      <tr><td style="padding:6px 16px 6px 0;color:#888">Breed Identified</td><td><strong>${data.breedIdentified}</strong></td></tr>
-      <tr><td style="padding:6px 16px 6px 0;color:#888">Confidence</td><td>${data.confidence != null ? `${data.confidence}%` : '—'}</td></tr>
-      <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Temperament</td><td style="max-width:480px">${data.temperament}</td></tr>
-      <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Care Notes</td><td style="max-width:480px">${data.careNotes}</td></tr>
-      <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Fun Fact</td><td style="max-width:480px">${data.funFact}</td></tr>
-    </table>
-  `;
 
   const result = await resend.emails.send({
     from: 'onboarding@resend.dev',
     to,
-    subject,
-    html,
+    subject: `New PawPrint Submission — ${data.petName || 'Unknown'} the ${data.breedIdentified}`,
+    html: `
+      <h2>🐾 New PawPrint Submission</h2>
+      <table style="border-collapse:collapse;font-family:monospace;font-size:14px">
+        <tr><td style="padding:6px 16px 6px 0;color:#888">Timestamp</td><td>${timestamp}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#888">Pet Name</td><td>${data.petName || '—'}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#888">Breed Identified</td><td><strong>${data.breedIdentified}</strong></td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#888">Confidence</td><td>${data.confidence != null ? `${data.confidence}%` : '—'}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Temperament</td><td style="max-width:480px">${data.temperament}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Care Notes</td><td style="max-width:480px">${data.careNotes}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Fun Fact</td><td style="max-width:480px">${data.funFact}</td></tr>
+      </table>
+    `,
   });
 
   console.log('[SCAN] Resend response:', JSON.stringify(result));
-
   if (result.error) {
     console.error('[SCAN] Resend email failed:', result.error);
   } else {
     console.log('[SCAN] Notification email sent to', to);
   }
-}
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    request.headers.get('x-real-ip') ||
-    'unknown'
-  );
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -231,10 +250,9 @@ export async function POST(request: NextRequest): Promise<Response> {
       return Response.json({ success: true, result: MOCK_SCAN_RESULT, testMode: true } satisfies ScanAPIResponse);
     }
 
-    const rawBuffer = await imageFile.arrayBuffer();
     let imageBuffer: Buffer;
     try {
-      imageBuffer = await convertToJpeg(rawBuffer, imageFile.type);
+      imageBuffer = await compressImage(await imageFile.arrayBuffer(), imageFile.type);
     } catch (convErr) {
       const msg = convErr instanceof Error ? convErr.message : 'Unsupported image format';
       return Response.json({ success: false, error: msg } satisfies ScanAPIResponse, { status: 415 });
@@ -266,11 +284,15 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (typeof result.confidence === 'number' && result.confidence < 60) {
       console.log(`[SCAN] Low confidence (${result.confidence}%), retrying with focused prompt`);
       const retry = await callClaude(base64, context, LOW_CONFIDENCE_RETRY);
-      if (typeof retry.confidence === 'number' && retry.confidence > result.confidence) {
+      if (typeof retry.confidence === 'number' && retry.confidence > (result.confidence ?? 0)) {
         result = retry;
       }
     }
 
+    // Save to Supabase — awaited before response, so Vercel doesn't kill it
+    await saveToSupabase(fields, result);
+
+    // Send email notification — fire-and-forget, never blocks response
     sendNotificationEmail({
       petName: fields.name,
       breedIdentified: result.primary_breed,
@@ -278,7 +300,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       temperament: result.typical_temperament,
       careNotes: result.common_health_considerations,
       funFact: result.fun_fact,
-    }).catch((err) => console.error('[SCAN] Email notification failed:', err instanceof Error ? err.message : err));
+    }).catch((err) => console.error('[SCAN] Email failed:', err instanceof Error ? err.message : err));
 
     const { confidence: _conf, ...scanResult } = result;
     void _conf;
