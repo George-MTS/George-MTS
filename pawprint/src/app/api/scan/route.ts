@@ -264,8 +264,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
     }
 
-    // Save to Supabase — non-blocking, errors are logged but don't fail the response
-    saveToSupabase(imageBuffer, result, fields).catch((err) => {
+    // Save to Supabase — must be awaited before response; Vercel terminates on response exit
+    await saveToSupabase(imageBuffer, result, fields).catch((err) => {
       console.error('[SCAN] saveToSupabase threw unexpectedly:', err instanceof Error ? err.message : err);
     });
 
