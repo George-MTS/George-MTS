@@ -47,42 +47,16 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
     LABELS.energy[profile.energy],
   ];
 
+  const MAX_FILE_MB = 25;
+
   const handleFile = (file: File) => {
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setError(`Photo is too large (max ${MAX_FILE_MB}MB). Please choose a smaller image.`);
+      return;
+    }
     setImageFile(file);
     setPreview(URL.createObjectURL(file));
     setError(null);
-  };
-
-  // Compress image client-side — keeps upload well under Vercel's 4.5MB limit
-  const compressImage = (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.onload = () => {
-        const MAX = 1024;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-          else { width = Math.round((width * MAX) / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(objectUrl);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) resolve(new File([blob], 'photo.jpg', { type: 'image/jpeg' }));
-            else resolve(file);
-          },
-          'image/jpeg',
-          0.75,
-        );
-      };
-      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
-      img.src = objectUrl;
-    });
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -104,10 +78,8 @@ export default function ProfileSummaryCard({ profile, onResult, onReset }: Props
       localStorage.setItem('pawprint-scans', JSON.stringify(stored));
     } catch { /* ignore */ }
 
-    const compressed = await compressImage(imageFile);
-
     const fd = new FormData();
-    fd.append('image', compressed);
+    fd.append('image', imageFile);
     fd.append('name', profile.name);
     fd.append('birthday', profile.birthday);
     fd.append('size', profile.size);

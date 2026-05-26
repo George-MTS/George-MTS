@@ -13,10 +13,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@anthropic-ai/sdk"],
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "25mb",
     },
   },
 };
 
-// CommonJS export so Vercel picks up the api.bodyParser setting
 module.exports = nextConfig;

@@ -9,10 +9,11 @@ import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
 import type { BreedScanResult, ScanAPIResponse } from '@/types';
 
 export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 // Pages-Router style hint — kept for compatibility; App Router uses maxDuration above
 export const config = {
-  api: { bodyParser: { sizeLimit: '10mb' } },
+  api: { bodyParser: { sizeLimit: '25mb' } },
 };
 
 const SYSTEM_PROMPT = `You are the world's most accurate dog and cat breed identification expert.
@@ -79,8 +80,8 @@ async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buf
   const bytes = Buffer.from(buffer);
   return sharp(bytes, { failOn: 'none' })
     .rotate()
-    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 70 })
+    .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 85 })
     .toBuffer();
 }
 
