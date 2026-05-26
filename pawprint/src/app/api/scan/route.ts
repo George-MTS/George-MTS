@@ -10,6 +10,11 @@ import type { BreedScanResult, ScanAPIResponse } from '@/types';
 
 export const maxDuration = 60;
 
+// Pages-Router style hint — kept for compatibility; App Router uses maxDuration above
+export const config = {
+  api: { bodyParser: { sizeLimit: '10mb' } },
+};
+
 const SYSTEM_PROMPT = `You are the world's most accurate dog and cat breed identification expert.
 You have encyclopedic knowledge of every AKC, KC, and FCI registered breed,
 plus mixed breeds, and regional/African breeds.
@@ -74,8 +79,8 @@ async function convertToJpeg(buffer: ArrayBuffer, mimeType: string): Promise<Buf
   const bytes = Buffer.from(buffer);
   return sharp(bytes, { failOn: 'none' })
     .rotate()
-    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 80 })
+    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 70 })
     .toBuffer();
 }
 
