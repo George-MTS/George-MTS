@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import sharp from 'sharp';
+import { Resend } from 'resend';
 import { anthropic } from '@/lib/anthropic';
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
@@ -126,19 +127,53 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
   }
 }
 
-function sendToGoogleSheets(payload: Record<string, unknown>): void {
-  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
-  if (!webhookUrl) {
-    console.log('[SCAN] GOOGLE_SHEET_WEBHOOK_URL not set — skipping sheet write');
+async function sendNotificationEmail(data: {
+  petName: string;
+  breedIdentified: string;
+  confidence: number | null;
+  temperament: string;
+  careNotes: string;
+  funFact: string;
+}): Promise<void> {
+  const to = process.env.NOTIFICATION_EMAIL;
+  if (!to) {
+    console.log('[SCAN] NOTIFICATION_EMAIL not set — skipping email');
     return;
   }
-  fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-    .then(() => console.log('[SCAN] Google Sheet webhook sent'))
-    .catch((err) => console.error('[SCAN] Google Sheet webhook failed:', err instanceof Error ? err.message : err));
+  if (!process.env.RESEND_API_KEY) {
+    console.log('[SCAN] RESEND_API_KEY not set — skipping email');
+    return;
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const subject = `New PawPrint Submission — ${data.petName || 'Unknown'} the ${data.breedIdentified}`;
+  const timestamp = new Date().toISOString();
+
+  const html = `
+    <h2>🐾 New PawPrint Submission</h2>
+    <table style="border-collapse:collapse;font-family:monospace;font-size:14px">
+      <tr><td style="padding:6px 16px 6px 0;color:#888">Timestamp</td><td>${timestamp}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#888">Pet Name</td><td>${data.petName || '—'}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#888">Breed Identified</td><td><strong>${data.breedIdentified}</strong></td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#888">Confidence</td><td>${data.confidence != null ? `${data.confidence}%` : '—'}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Temperament</td><td style="max-width:480px">${data.temperament}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Care Notes</td><td style="max-width:480px">${data.careNotes}</td></tr>
+      <tr><td style="padding:6px 16px 6px 0;color:#888;vertical-align:top">Fun Fact</td><td style="max-width:480px">${data.funFact}</td></tr>
+    </table>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to,
+    subject,
+    html,
+  });
+
+  if (error) {
+    console.error('[SCAN] Resend email failed:', error);
+  } else {
+    console.log('[SCAN] Notification email sent to', to);
+  }
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -206,20 +241,14 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
     }
 
-    // Fire-and-forget — never blocks or fails the response
-    sendToGoogleSheets({
-      timestamp: new Date().toISOString(),
-      pet_name: fields.name || null,
-      pet_type: 'dog',
-      breed_identified: result.primary_breed,
+    sendNotificationEmail({
+      petName: fields.name,
+      breedIdentified: result.primary_breed,
       confidence: result.confidence ?? null,
       temperament: result.typical_temperament,
-      care_notes: result.common_health_considerations,
-      owner_name: null,
-      twitter_handle: null,
-      origin: null,
-      fun_fact: result.fun_fact,
-    });
+      careNotes: result.common_health_considerations,
+      funFact: result.fun_fact,
+    }).catch((err) => console.error('[SCAN] Email notification failed:', err instanceof Error ? err.message : err));
 
     const { confidence: _conf, ...scanResult } = result;
     void _conf;
