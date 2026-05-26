@@ -1,9 +1,6 @@
 import { NextRequest } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
 import { anthropic } from '@/lib/anthropic';
-import { createServiceClient } from '@/lib/supabase';
-import { bufferToBase64 } from '@/lib/utils';
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
 import type { BreedScanResult, ScanAPIResponse } from '@/types';
@@ -11,7 +8,6 @@ import type { BreedScanResult, ScanAPIResponse } from '@/types';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-// Pages-Router style hint — kept for compatibility; App Router uses maxDuration above
 export const config = {
   api: { bodyParser: { sizeLimit: '25mb' } },
 };
@@ -130,78 +126,19 @@ async function callClaude(base64: string, context: string, retryPrompt?: string)
   }
 }
 
-async function saveToSupabase(
-  imageBuffer: Buffer,
-  result: RawResult,
-  fields: {
-    name: string; size: string; weight: string; coat: string;
-    ears: string; energy: string; birthday: string;
+function sendToGoogleSheets(payload: Record<string, unknown>): void {
+  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.log('[SCAN] GOOGLE_SHEET_WEBHOOK_URL not set — skipping sheet write');
+    return;
   }
-): Promise<void> {
-  const supabase = createServiceClient();
-
-  console.log('[SCAN] Saving submission to Supabase...');
-  console.log('[SCAN] Supabase URL configured:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('[SCAN] Service role key configured:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  // Step 1: try to upload image — non-fatal if it fails
-  let imageUrl: string | null = null;
-  try {
-    const filename = `${Date.now()}_${uuidv4()}.jpg`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('pet-photos')
-      .upload(filename, imageBuffer, { contentType: 'image/jpeg', upsert: false });
-
-    if (uploadError) {
-      console.warn('[SCAN] Image upload failed (non-fatal):', uploadError.message);
-    } else {
-      const { data: urlData } = supabase.storage.from('pet-photos').getPublicUrl(uploadData.path);
-      imageUrl = urlData.publicUrl;
-      console.log('[SCAN] Image uploaded:', imageUrl);
-    }
-  } catch (uploadErr) {
-    console.warn('[SCAN] Image upload threw (non-fatal):', uploadErr instanceof Error ? uploadErr.message : uploadErr);
-  }
-
-  // Step 2: insert submission — always attempt regardless of image upload outcome
-  const traitsNotes = [
-    fields.size && `Size: ${fields.size}`,
-    fields.weight && `Weight: ${fields.weight}`,
-    fields.coat && `Coat: ${fields.coat}`,
-    fields.ears && `Ears: ${fields.ears}`,
-    fields.energy && `Energy: ${fields.energy}`,
-    fields.birthday && `Birthday: ${fields.birthday}`,
-  ].filter(Boolean).join(' | ') || null;
-
-  const row = {
-    pet_type: 'dog' as const,       // scan flow doesn't ask — default to dog
-    pet_name: fields.name || null,
-    breed_provided: null,
-    age: result.estimated_age_range || null,
-    origin: null,
-    owner_name: null,
-    twitter_handle: null,
-    traits_notes: traitsNotes,
-    image_url: imageUrl,
-    ai_breed_identified: result.primary_breed,
-    ai_confidence: typeof result.confidence === 'number' ? result.confidence : null,
-    ai_temperament: result.typical_temperament || null,
-    ai_care_notes: result.common_health_considerations || null,
-    ai_traits: null,
-    ai_fun_fact: result.fun_fact || null,
-    ai_origin: null,
-    raw_ai_response: result as unknown as Record<string, unknown>,
-  };
-
-  console.log('SAVING TO SUPABASE', JSON.stringify({ ...row, raw_ai_response: '(omitted)' }, null, 2));
-
-  const { data: insertData, error: insertError } = await supabase
-    .from('submissions')
-    .insert(row)
-    .select('id')
-    .single();
-
-  console.log('SUPABASE RESULT:', JSON.stringify({ data: insertData, error: insertError }, null, 2));
+  fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+    .then(() => console.log('[SCAN] Google Sheet webhook sent'))
+    .catch((err) => console.error('[SCAN] Google Sheet webhook failed:', err instanceof Error ? err.message : err));
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -261,7 +198,6 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     let result = await callClaude(base64, context);
 
-    // Retry if confidence is low
     if (typeof result.confidence === 'number' && result.confidence < 60) {
       console.log(`[SCAN] Low confidence (${result.confidence}%), retrying with focused prompt`);
       const retry = await callClaude(base64, context, LOW_CONFIDENCE_RETRY);
@@ -270,12 +206,21 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
     }
 
-    // Save to Supabase — must be awaited before response; Vercel terminates on response exit
-    await saveToSupabase(imageBuffer, result, fields).catch((err) => {
-      console.error('[SCAN] saveToSupabase threw unexpectedly:', err instanceof Error ? err.message : err);
+    // Fire-and-forget — never blocks or fails the response
+    sendToGoogleSheets({
+      timestamp: new Date().toISOString(),
+      pet_name: fields.name || null,
+      pet_type: 'dog',
+      breed_identified: result.primary_breed,
+      confidence: result.confidence ?? null,
+      temperament: result.typical_temperament,
+      care_notes: result.common_health_considerations,
+      owner_name: null,
+      twitter_handle: null,
+      origin: null,
+      fun_fact: result.fun_fact,
     });
 
-    // Strip internal confidence field before returning
     const { confidence: _conf, ...scanResult } = result;
     void _conf;
 
