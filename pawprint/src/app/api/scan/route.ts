@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import { Resend } from 'resend';
 import { anthropic } from '@/lib/anthropic';
 import { checkAndIncrement } from '@/lib/usageCounter';
+import { checkIpLimit } from '@/lib/ipRateLimit';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
 import type { BreedScanResult, ScanAPIResponse } from '@/types';
 
@@ -182,7 +183,30 @@ async function sendNotificationEmail(data: {
   }
 }
 
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
+
 export async function POST(request: NextRequest): Promise<Response> {
+  // Per-IP limit: 3 scans per 24 hours
+  const ip = getClientIp(request);
+  const ipCheck = checkIpLimit(ip);
+  if (!ipCheck.allowed) {
+    return Response.json(
+      {
+        success: false,
+        limitReached: true,
+        error: "You've used your 3 free scans today — come back tomorrow for more!",
+      } satisfies ScanAPIResponse,
+      { status: 429 }
+    );
+  }
+
+  // Global daily cap: 500 scans total
   const usage = checkAndIncrement();
   if (!usage.allowed) {
     return Response.json(

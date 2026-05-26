@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 
 const COUNTER_FILE = '/tmp/pawprint-usage.json';
-const DAILY_LIMIT = 50;
+const DAILY_LIMIT = 500;
 
 interface UsageData {
   date: string;
