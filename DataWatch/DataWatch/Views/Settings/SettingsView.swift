@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
@@ -28,7 +29,9 @@ struct SettingsView: View {
                                 .foregroundColor(Color.dwWarmWhite.opacity(0.5))
                         }
                         .listRowBackground(Color.dwCardBg)
-                        .onChange(of: viewModel.dailyThresholdMB) { _ in viewModel.saveSettings() }
+                        .onReceive(viewModel.$dailyThresholdMB.dropFirst()) { _ in
+                            viewModel.saveSettings()
+                        }
 
                         Toggle(isOn: $viewModel.notificationsEnabled) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -41,7 +44,9 @@ struct SettingsView: View {
                         }
                         .tint(Color.dwAmber)
                         .listRowBackground(Color.dwCardBg)
-                        .onChange(of: viewModel.notificationsEnabled) { _ in viewModel.saveSettings() }
+                        .onReceive(viewModel.$notificationsEnabled.dropFirst()) { _ in
+                            viewModel.saveSettings()
+                        }
                     } header: {
                         Text("ALERTS").foregroundColor(Color.dwWarmWhite.opacity(0.5))
                     }
