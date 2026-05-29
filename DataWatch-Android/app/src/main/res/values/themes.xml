@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DataWatch" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent_gold</item>
+        <item name="colorPrimaryVariant">@color/card_surface</item>
+        <item name="colorOnPrimary">@color/primary_bg</item>
+        <item name="colorSecondary">@color/mint_green</item>
+        <item name="colorOnSecondary">@color/primary_bg</item>
+        <item name="android:colorBackground">@color/primary_bg</item>
+        <item name="colorSurface">@color/card_surface</item>
+        <item name="colorOnSurface">@color/primary_text</item>
+        <item name="android:windowBackground">@color/primary_bg</item>
+        <item name="android:statusBarColor">@color/primary_bg</item>
+        <item name="android:navigationBarColor">@color/primary_bg</item>
+    </style>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="card_elevation">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="text_primary">16sp</dimen>
+    <dimen name="text_secondary">14sp</dimen>
+    <dimen name="text_caption">12sp</dimen>
+    <dimen name="app_icon_size">48dp</dimen>
+    <dimen name="circular_progress_size">120dp</dimen>
+</resources>

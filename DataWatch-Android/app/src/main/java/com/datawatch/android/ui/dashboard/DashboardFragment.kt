@@ -1,0 +1,85 @@
+package com.datawatch.android.ui.dashboard
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.datawatch.android.R
+import com.datawatch.android.adapters.AppUsageAdapter
+import com.datawatch.android.databinding.FragmentDashboardBinding
+import com.datawatch.android.utils.FormatUtils
+import com.datawatch.android.utils.PermissionHelper
+import java.text.SimpleDateFormat
+import java.util.*
+
+class DashboardFragment : Fragment() {
+    private var _binding: FragmentDashboardBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: DashboardViewModel by viewModels()
+    private lateinit var adapter: AppUsageAdapter
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentDashboardBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        if (!PermissionHelper.hasUsageStatsPermission(requireContext())) {
+            binding.permissionBanner.visibility = View.VISIBLE
+            binding.permissionBanner.setOnClickListener {
+                PermissionHelper.openUsageAccessSettings(requireContext())
+            }
+        }
+
+        setupRecyclerView()
+        observeViewModel()
+
+        binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
+    }
+
+    private fun setupRecyclerView() {
+        adapter = AppUsageAdapter { packageName ->
+            val action = DashboardFragmentDirections.actionDashboardToAppDetail(packageName)
+            findNavController().navigate(action)
+        }
+        binding.rvAppUsage.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvAppUsage.adapter = adapter
+    }
+
+    private fun observeViewModel() {
+        viewModel.appUsageList.observe(viewLifecycleOwner) { apps ->
+            adapter.submitList(apps)
+            binding.emptyState.visibility = if (apps.isEmpty()) View.VISIBLE else View.GONE
+            binding.rvAppUsage.visibility = if (apps.isEmpty()) View.GONE else View.VISIBLE
+        }
+
+        viewModel.summary.observe(viewLifecycleOwner) { summary ->
+            binding.tvCellularUsage.text = FormatUtils.formatBytes(summary.totalCellularBytes)
+            binding.tvWifiUsage.text = FormatUtils.formatBytes(summary.totalWifiBytes)
+            val percentage = (summary.usagePercentage * 100).toInt()
+            binding.circularProgress.progress = percentage
+            binding.tvProgressPercent.text = "$percentage%"
+            binding.tvThreshold.text = "of ${FormatUtils.formatMB(summary.thresholdMB)} daily limit"
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+            binding.swipeRefresh.isRefreshing = loading
+        }
+
+        viewModel.lastUpdated.observe(viewLifecycleOwner) { timestamp ->
+            val fmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            binding.tvLastUpdated.text = "Updated ${fmt.format(Date(timestamp))}"
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}

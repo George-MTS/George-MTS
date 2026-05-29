@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.datawatch.android.ui.dashboard.DashboardFragment"
+        android:label="Dashboard"
+        tools:layout="@layout/fragment_dashboard">
+        <action
+            android:id="@+id/action_dashboard_to_app_detail"
+            app:destination="@id/appDetailFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/appsFragment"
+        android:name="com.datawatch.android.ui.apps.AppsFragment"
+        android:label="Apps"
+        tools:layout="@layout/fragment_apps">
+        <action
+            android:id="@+id/action_apps_to_app_detail"
+            app:destination="@id/appDetailFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.datawatch.android.ui.settings.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings"/>
+
+    <fragment
+        android:id="@+id/appDetailFragment"
+        android:name="com.datawatch.android.ui.apps.AppDetailFragment"
+        android:label="App Details"
+        tools:layout="@layout/fragment_app_detail">
+        <argument
+            android:name="packageName"
+            app:argType="string"/>
+    </fragment>
+
+</navigation>

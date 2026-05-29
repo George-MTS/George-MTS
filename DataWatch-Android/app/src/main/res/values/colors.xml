@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_bg">#0D1B2A</color>
+    <color name="card_surface">#1A2C3D</color>
+    <color name="accent_gold">#F5A623</color>
+    <color name="mint_green">#2ECC9A</color>
+    <color name="warning_red">#E74C3C</color>
+    <color name="primary_text">#F0F4F8</color>
+    <color name="secondary_text">#8FA3B1</color>
+    <color name="white">#FFFFFF</color>
+    <color name="transparent">#00000000</color>
+</resources>
