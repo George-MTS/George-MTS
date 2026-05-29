@@ -13,11 +13,43 @@ final class DataUsageService: ObservableObject {
     private var refreshTimer: Timer?
     private let storage = CoreDataStack.shared
 
+    // Cumulative bytes at the start of today (or app first-run today).
+    // Stored in UserDefaults so it survives app restarts within the same calendar day.
+    private var baseline = NetworkSnapshot.zero
+    private var baselineDate = Date.distantPast
+
     private init() {
-        loadCachedData()
+        restoreOrResetBaseline()
         schedulePeriodicRefresh()
         refreshUsageData()
     }
+
+    // MARK: - Baseline management
+
+    private func restoreOrResetBaseline() {
+        let defaults = UserDefaults.standard
+        if let saved = defaults.object(forKey: "dw.baselineDate") as? Date,
+           Calendar.current.isDateInToday(saved) {
+            baseline = NetworkSnapshot(
+                wifi:     Int64(defaults.double(forKey: "dw.baselineWifi")),
+                cellular: Int64(defaults.double(forKey: "dw.baselineCellular"))
+            )
+            baselineDate = saved
+        } else {
+            captureBaseline()
+        }
+    }
+
+    private func captureBaseline() {
+        baseline     = NetworkBytesReader.current()
+        baselineDate = Date()
+        let defaults = UserDefaults.standard
+        defaults.set(Double(baseline.wifi),     forKey: "dw.baselineWifi")
+        defaults.set(Double(baseline.cellular), forKey: "dw.baselineCellular")
+        defaults.set(baselineDate,              forKey: "dw.baselineDate")
+    }
+
+    // MARK: - Refresh
 
     private func schedulePeriodicRefresh() {
         DispatchQueue.main.async {
@@ -30,44 +62,34 @@ final class DataUsageService: ObservableObject {
     func refreshUsageData() {
         DispatchQueue.main.async { self.isLoading = true }
 
-        let mockData   = MockDataProvider.generateMockAppUsages()
-        let sorted     = mockData.sorted { $0.totalBytes > $1.totalBytes }
-        let cellular   = mockData.reduce(0) { $0 + $1.cellularBytes }
-        let wifi       = mockData.reduce(0) { $0 + $1.wifiBytes }
-        let now        = Date()
-
-        DispatchQueue.main.async {
-            self.appUsages           = sorted
-            self.totalCellularToday  = cellular
-            self.totalWifiToday      = wifi
-            self.lastRefreshDate     = now
-            self.isLoading           = false
+        // Roll the baseline over at midnight
+        if !Calendar.current.isDateInToday(baselineDate) {
+            captureBaseline()
         }
 
-        NotificationService.shared.checkAndSendAlerts(appUsages: mockData, totalCellularToday: cellular)
-        storage.saveUsageSnapshot(sorted)
-    }
+        let current  = NetworkBytesReader.current()
+        let cellular = max(0, current.cellular - baseline.cellular)
+        let wifi     = max(0, current.wifi     - baseline.wifi)
+        let now      = Date()
 
-    private func loadCachedData() {
-        let cached = storage.loadLatestSnapshot()
-        guard !cached.isEmpty else { return }
         DispatchQueue.main.async {
-            self.appUsages          = cached
-            self.totalCellularToday = cached.reduce(0) { $0 + $1.cellularBytes }
-            self.totalWifiToday     = cached.reduce(0) { $0 + $1.wifiBytes }
+            self.totalCellularToday = cellular
+            self.totalWifiToday     = wifi
+            self.lastRefreshDate    = now
+            self.isLoading          = false
         }
+
+        NotificationService.shared.checkAndSendAlerts(appUsages: [], totalCellularToday: cellular)
     }
 
-    func getHourlyUsage(for bundleIdentifier: String) -> [HourlyUsage] {
-        MockDataProvider.generateHourlyUsage(for: bundleIdentifier)
-    }
-
-    func getDailyUsage(for bundleIdentifier: String) -> [DailyUsage] {
-        MockDataProvider.generateDailyUsage(for: bundleIdentifier)
-    }
+    // Per-app breakdown is not available in the iOS sandbox.
+    func getHourlyUsage(for bundleIdentifier: String) -> [HourlyUsage] { [] }
+    func getDailyUsage(for bundleIdentifier: String) -> [DailyUsage] { [] }
 
     func resetAllData() {
         storage.clearAllData()
+        // Re-snapshot so the counter restarts from zero right now
+        captureBaseline()
         DispatchQueue.main.async {
             self.appUsages          = []
             self.totalCellularToday = 0

@@ -36,6 +36,8 @@ struct DashboardView: View {
                                     .tint(Color.dwTeal)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 40)
+                            } else if viewModel.topApps.isEmpty {
+                                topAppsEmptyState
                             } else {
                                 LazyVStack(spacing: 8) {
                                     ForEach(viewModel.topApps) { app in
@@ -65,5 +67,23 @@ struct DashboardView: View {
                 }
             }
         }
+    }
+
+    private var topAppsEmptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.system(size: 34))
+                .foregroundColor(Color.dwWarmWhite.opacity(0.2))
+            Text("Monitoring your data")
+                .font(.system(.subheadline, design: .default, weight: .semibold))
+                .foregroundColor(Color.dwWarmWhite.opacity(0.5))
+            Text("Usage will appear here shortly")
+                .font(.system(.caption))
+                .foregroundColor(Color.dwWarmWhite.opacity(0.3))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+        .padding(.horizontal, 20)
     }
 }

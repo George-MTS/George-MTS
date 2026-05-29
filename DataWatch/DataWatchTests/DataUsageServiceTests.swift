@@ -3,52 +3,60 @@ import XCTest
 
 final class DataUsageServiceTests: XCTestCase {
 
-    func testRefreshProducesNonEmptyResults() {
+    func testRefreshDoesNotCrash() {
         let service = DataUsageService.shared
         service.refreshUsageData()
-        let expectation = XCTestExpectation(description: "Apps populated")
+        let expectation = XCTestExpectation(description: "Refresh completes without crash")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            XCTAssertFalse(service.appUsages.isEmpty, "App usages should not be empty after refresh")
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 2)
     }
 
-    func testAppsAreSortedByTotalBytesDescending() {
+    func testTotalsAreNonNegative() {
         let service = DataUsageService.shared
         service.refreshUsageData()
-        let expectation = XCTestExpectation(description: "Apps sorted")
+        let expectation = XCTestExpectation(description: "Totals are non-negative")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let apps = service.appUsages
-            for i in 0..<(apps.count - 1) {
-                XCTAssertGreaterThanOrEqual(apps[i].totalBytes, apps[i + 1].totalBytes,
-                    "Apps should be sorted highest first")
-            }
+            XCTAssertGreaterThanOrEqual(service.totalCellularToday, 0)
+            XCTAssertGreaterThanOrEqual(service.totalWifiToday, 0)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 2)
     }
 
-    func testHourlyUsageReturnsCurrentHours() {
+    func testAppUsagesIsAlwaysEmpty() {
+        let service = DataUsageService.shared
+        service.refreshUsageData()
+        let expectation = XCTestExpectation(description: "No per-app data on real mode")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            XCTAssertTrue(service.appUsages.isEmpty,
+                "Per-app breakdown is not available via the iOS sandbox")
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 2)
+    }
+
+    func testHourlyUsageReturnsEmpty() {
         let service = DataUsageService.shared
         let hourly = service.getHourlyUsage(for: "com.test.app")
-        let currentHour = Calendar.current.component(.hour, from: Date())
-        XCTAssertEqual(hourly.count, currentHour + 1, "Should return data from hour 0 through current hour")
+        XCTAssertTrue(hourly.isEmpty, "No per-app hourly data available on iOS")
     }
 
-    func testDailyUsageReturnsSeven() {
+    func testDailyUsageReturnsEmpty() {
         let service = DataUsageService.shared
         let daily = service.getDailyUsage(for: "com.test.app")
-        XCTAssertEqual(daily.count, 7, "Should return exactly 7 days of data")
+        XCTAssertTrue(daily.isEmpty, "No per-app daily data available on iOS")
     }
 
-    func testTotalsArePositive() {
+    func testResetClearsTotals() {
         let service = DataUsageService.shared
-        service.refreshUsageData()
-        let expectation = XCTestExpectation(description: "Totals positive")
+        service.resetAllData()
+        let expectation = XCTestExpectation(description: "Totals cleared after reset")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            XCTAssertGreaterThan(service.totalCellularToday, 0)
-            XCTAssertGreaterThan(service.totalWifiToday, 0)
+            XCTAssertEqual(service.totalCellularToday, 0)
+            XCTAssertEqual(service.totalWifiToday, 0)
+            XCTAssertTrue(service.appUsages.isEmpty)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 2)

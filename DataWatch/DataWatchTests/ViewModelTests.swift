@@ -4,10 +4,11 @@ import XCTest
 @MainActor
 final class ViewModelTests: XCTestCase {
 
-    func testDashboardViewModelBindsToService() async throws {
+    func testDashboardViewModelTotalsAreNonNegative() async throws {
         let vm = DashboardViewModel()
         try await Task.sleep(nanoseconds: 600_000_000)
-        XCTAssertFalse(vm.topApps.isEmpty, "Dashboard VM should have apps after service refresh")
+        XCTAssertGreaterThanOrEqual(vm.totalCellularToday, 0)
+        XCTAssertGreaterThanOrEqual(vm.totalWifiToday, 0)
     }
 
     func testDashboardVMFormatsBytes() async throws {
@@ -17,29 +18,30 @@ final class ViewModelTests: XCTestCase {
         XCTAssertFalse(vm.formattedWifi.isEmpty)
     }
 
-    func testDashboardTopAppsLimitedToTen() async throws {
+    func testDashboardTopAppsIsEmpty() async throws {
         let vm = DashboardViewModel()
         try await Task.sleep(nanoseconds: 600_000_000)
-        XCTAssertLessThanOrEqual(vm.topApps.count, 10, "Dashboard should show at most 10 apps")
+        XCTAssertTrue(vm.topApps.isEmpty,
+            "Real data mode has no per-app breakdown (iOS sandbox limitation)")
     }
 
-    func testAppDetailVMLoadsUsage() {
-        let mockApp = AppUsageModel(
+    func testAppDetailVMLoadsEmptyUsage() {
+        let app = AppUsageModel(
             id: UUID(),
             bundleIdentifier: "com.test.app",
             displayName: "TestApp",
             iconName: "app",
-            cellularBytesReceived: 1_048_576,
-            cellularBytesSent: 204_800,
-            wifiBytesReceived: 2_097_152,
-            wifiBytesSent: 102_400,
-            backgroundBytesTotal: 512_000,
+            cellularBytesReceived: 0,
+            cellularBytesSent: 0,
+            wifiBytesReceived: 0,
+            wifiBytesSent: 0,
+            backgroundBytesTotal: 0,
             lastUpdated: Date(),
             isSystemApp: false
         )
-        let vm = AppDetailViewModel(app: mockApp)
-        XCTAssertFalse(vm.hourlyUsage.isEmpty, "Hourly usage should be populated")
-        XCTAssertEqual(vm.dailyUsage.count, 7, "Daily usage should have 7 entries")
+        let vm = AppDetailViewModel(app: app)
+        XCTAssertTrue(vm.hourlyUsage.isEmpty, "No per-app hourly data available on iOS")
+        XCTAssertTrue(vm.dailyUsage.isEmpty, "No per-app daily data available on iOS")
     }
 
     func testSettingsVMDefaultValues() {

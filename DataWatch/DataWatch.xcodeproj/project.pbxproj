@@ -41,6 +41,7 @@
 		7A0800000000000000000002 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000002 /* CoreData.framework */; };
 		7A0800000000000000000003 /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000003 /* UserNotifications.framework */; };
 		7A0800000000000000000004 /* BackgroundTasks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A0400000000000000000004 /* BackgroundTasks.framework */; };
+		7A0600000000000000000023 /* NetworkBytesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000023 /* NetworkBytesReader.swift */; };
 		7A0600000000000000000020 /* DataUsageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000020 /* DataUsageServiceTests.swift */; };
 		7A0600000000000000000021 /* EncryptionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000021 /* EncryptionServiceTests.swift */; };
 		7A0600000000000000000022 /* ViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0200000000000000000022 /* ViewModelTests.swift */; };
@@ -95,6 +96,7 @@
 		7A0400000000000000000002 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		7A0400000000000000000003 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 		7A0400000000000000000004 /* BackgroundTasks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundTasks.framework; path = System/Library/Frameworks/BackgroundTasks.framework; sourceTree = SDKROOT; };
+		7A0200000000000000000023 /* NetworkBytesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkBytesReader.swift; sourceTree = "<group>"; };
 		7A0200000000000000000020 /* DataUsageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataUsageServiceTests.swift; sourceTree = "<group>"; };
 		7A0200000000000000000021 /* EncryptionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionServiceTests.swift; sourceTree = "<group>"; };
 		7A0200000000000000000022 /* ViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelTests.swift; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				7A0200000000000000000016 /* MockDataProvider.swift */,
 				7A0200000000000000000017 /* NotificationService.swift */,
 				7A0200000000000000000018 /* EncryptionService.swift */,
+				7A0200000000000000000023 /* NetworkBytesReader.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -420,6 +423,7 @@
 				7A0600000000000000000016 /* MockDataProvider.swift in Sources */,
 				7A0600000000000000000017 /* NotificationService.swift in Sources */,
 				7A0600000000000000000018 /* EncryptionService.swift in Sources */,
+				7A0600000000000000000023 /* NetworkBytesReader.swift in Sources */,
 				7A0600000000000000000019 /* CoreDataStack.swift in Sources */,
 				7A060000000000000000001A /* KeychainService.swift in Sources */,
 				7A060000000000000000001B /* Color+Theme.swift in Sources */,
