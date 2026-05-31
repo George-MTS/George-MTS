@@ -41,6 +41,8 @@ class NetworkStatsService(private val context: Context) {
             )
             processBucket(cellularStats, usageMap, isCellular = true)
             cellularStats.close()
+        } catch (e: SecurityException) {
+            Log.w("NetworkStatsService", "Permission denied for cellular stats: ${e.message}")
         } catch (e: Exception) {
             Log.w("NetworkStatsService", "Could not get cellular stats: ${e.message}")
         }
@@ -54,6 +56,8 @@ class NetworkStatsService(private val context: Context) {
             )
             processBucket(wifiStats, usageMap, isCellular = false)
             wifiStats.close()
+        } catch (e: SecurityException) {
+            Log.w("NetworkStatsService", "Permission denied for WiFi stats: ${e.message}")
         } catch (e: Exception) {
             Log.w("NetworkStatsService", "Could not get WiFi stats: ${e.message}")
         }
@@ -104,6 +108,9 @@ class NetworkStatsService(private val context: Context) {
                 System.currentTimeMillis()
             )
             stats.rxBytes + stats.txBytes
+        } catch (e: SecurityException) {
+            Log.w("NetworkStatsService", "Permission denied for total cellular: ${e.message}")
+            0L
         } catch (e: Exception) {
             Log.w("NetworkStatsService", "Could not get total cellular: ${e.message}")
             0L
@@ -124,6 +131,9 @@ class NetworkStatsService(private val context: Context) {
                 System.currentTimeMillis()
             )
             stats.rxBytes + stats.txBytes
+        } catch (e: SecurityException) {
+            Log.w("NetworkStatsService", "Permission denied for total WiFi: ${e.message}")
+            0L
         } catch (e: Exception) {
             Log.w("NetworkStatsService", "Could not get total WiFi: ${e.message}")
             0L
