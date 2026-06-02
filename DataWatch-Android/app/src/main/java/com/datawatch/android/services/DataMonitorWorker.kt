@@ -33,11 +33,11 @@ class DataMonitorWorker(
                     AppUsageEntity(
                         packageName = usage.packageName,
                         date = today,
-                        hour = currentHour,
                         cellularBytes = usage.cellularBytes,
                         wifiBytes = usage.wifiBytes,
                         foregroundBytes = usage.foregroundBytes,
-                        backgroundBytes = usage.backgroundBytes
+                        backgroundBytes = usage.backgroundBytes,
+                        lastUpdatedHour = currentHour
                     )
                 )
                 if (usage.totalMB > 50f && prefs.notificationsEnabled) {

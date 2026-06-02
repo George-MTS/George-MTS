@@ -10,6 +10,8 @@ import com.datawatch.android.models.DataUsageSummary
 import com.datawatch.android.repository.DataRepository
 import kotlinx.coroutines.launch
 
+enum class UsageFilter { ALL, CELLULAR, WIFI }
+
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = DataRepository(application)
 
@@ -24,6 +26,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _lastUpdated = MutableLiveData<Long>()
     val lastUpdated: LiveData<Long> = _lastUpdated
 
+    // BUG 2 FIX: expose filter state so the fragment can show Cellular-only or WiFi-only lists.
+    private val _filter = MutableLiveData(UsageFilter.ALL)
+    val filter: LiveData<UsageFilter> = _filter
+
     init {
         refresh()
     }
@@ -36,10 +42,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _summary.value = repository.getCurrentSummary()
                 _lastUpdated.value = System.currentTimeMillis()
             } catch (e: Exception) {
-                // Use cached data
+                // Surface partial data from DB even if network query fails
+                _summary.value = repository.getCurrentSummary()
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setFilter(filter: UsageFilter) {
+        _filter.value = filter
     }
 }

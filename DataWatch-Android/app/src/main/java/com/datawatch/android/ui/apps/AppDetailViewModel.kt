@@ -17,7 +17,7 @@ class AppDetailViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setPackageName(packageName: String) {
         _packageName.value = packageName
-        hourlyUsage = repository.getHourlyUsageForApp(packageName)
+        hourlyUsage = repository.getDailyUsageForApp(packageName)
         weeklyUsage = repository.getWeeklyUsageForApp(packageName)
     }
 }

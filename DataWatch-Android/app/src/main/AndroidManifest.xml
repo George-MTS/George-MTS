@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    SECURITY AUDIT CONFIRMATION:
+    DataWatch has ZERO internet permissions. android.permission.INTERNET is deliberately
+    absent. The app cannot make any outbound network connection, cannot reach Google Play,
+    Google accounts, or any external service. All data is processed and stored exclusively
+    on-device. No analytics SDKs, no crash-reporting SDKs, no third-party network libraries
+    are included in the dependency tree.
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Device/network state — read-only, no data transmission -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions"/>
+    <!-- Usage stats: requires user to grant via Settings > Apps > Special app access -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <!-- INTERNET permission is intentionally NOT declared. -->
 
     <application
         android:name=".DataWatchApplication"

@@ -2,7 +2,6 @@ package com.datawatch.android.repository
 
 import android.content.Context
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import com.datawatch.android.database.AppDatabase
 import com.datawatch.android.database.AppUsageEntity
@@ -28,16 +27,19 @@ class DataRepository(private val context: Context) {
         val appUsages = networkStatsService.getAppUsageForToday()
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
+        // BUG 1 FIX: composite PK (packageName, date) means REPLACE updates the single row
+        // per app rather than inserting duplicates. Each refresh stores the latest cumulative
+        // total from NetworkStatsManager — no summation, no double-counting.
         appUsages.forEach { usage ->
             dao.insertAppUsage(
                 AppUsageEntity(
                     packageName = usage.packageName,
                     date = today,
-                    hour = currentHour,
                     cellularBytes = usage.cellularBytes,
                     wifiBytes = usage.wifiBytes,
                     foregroundBytes = usage.foregroundBytes,
-                    backgroundBytes = usage.backgroundBytes
+                    backgroundBytes = usage.backgroundBytes,
+                    lastUpdatedHour = currentHour
                 )
             )
         }
@@ -72,17 +74,19 @@ class DataRepository(private val context: Context) {
         }
     }
 
+    // BUG 4 FIX: always query NetworkStatsManager directly for device totals.
+    // The DB per-app sums are for listing purposes; the device-level summary uses the
+    // authoritative system query which is always accurate regardless of DB state.
     suspend fun getCurrentSummary(): DataUsageSummary = withContext(Dispatchers.IO) {
-        val totals = dao.getTotalUsageForDate(today)
         DataUsageSummary(
-            totalCellularBytes = totals?.cellular ?: networkStatsService.getTotalCellularUsageToday(),
-            totalWifiBytes = totals?.wifi ?: networkStatsService.getTotalWifiUsageToday(),
+            totalCellularBytes = networkStatsService.getTotalCellularUsageToday(),
+            totalWifiBytes = networkStatsService.getTotalWifiUsageToday(),
             dailyThresholdBytes = prefs.dailyThresholdMB * 1024L * 1024L
         )
     }
 
-    fun getHourlyUsageForApp(packageName: String): LiveData<List<AppUsageEntity>> {
-        return dao.getHourlyUsageForApp(packageName, today)
+    fun getDailyUsageForApp(packageName: String): LiveData<List<AppUsageEntity>> {
+        return dao.getDailyUsageForApp(packageName, today)
     }
 
     fun getWeeklyUsageForApp(packageName: String): LiveData<List<AppUsageEntity>> {

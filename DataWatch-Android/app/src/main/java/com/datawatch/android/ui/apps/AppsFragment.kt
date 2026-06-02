@@ -25,6 +25,7 @@ class AppsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Long-press on any card navigates to App Detail (tap expands inline breakdown).
         adapter = AppUsageAdapter { packageName ->
             val action = AppsFragmentDirections.actionAppsToAppDetail(packageName)
             findNavController().navigate(action)
