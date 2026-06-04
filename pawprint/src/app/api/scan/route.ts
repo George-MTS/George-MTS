@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import { Resend } from 'resend';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import { kv } from '@vercel/kv';
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { checkIpLimit } from '@/lib/ipRateLimit';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
@@ -162,6 +163,27 @@ async function saveToSupabase(fields: Record<string, string>, result: RawResult)
   }
 }
 
+async function saveToKv(fields: Record<string, string>, result: RawResult): Promise<void> {
+  try {
+    const submission = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      pet_name: fields.name || null,
+      pet_type: 'dog',
+      breed_identified: result.primary_breed,
+      confidence: result.confidence ?? null,
+      temperament: result.typical_temperament,
+      care_notes: result.common_health_considerations,
+      fun_fact: result.fun_fact,
+    };
+    await kv.lpush('submissions', JSON.stringify(submission));
+    await kv.incr('total_count');
+    console.log('[SCAN] KV save succeeded, id:', submission.id);
+  } catch (err) {
+    console.error('[SCAN] KV save error:', err instanceof Error ? err.message : err);
+  }
+}
+
 async function sendNotificationEmail(data: {
   petName: string;
   breedIdentified: string;
@@ -291,6 +313,9 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Save to Supabase — awaited before response, so Vercel doesn't kill it
     await saveToSupabase(fields, result);
+
+    // Save to Vercel KV — awaited before response
+    await saveToKv(fields, result);
 
     // Send email notification — fire-and-forget, never blocks response
     sendNotificationEmail({
