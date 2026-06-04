@@ -3,7 +3,12 @@ import sharp from 'sharp';
 import { Resend } from 'resend';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { checkIpLimit } from '@/lib/ipRateLimit';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
@@ -176,8 +181,8 @@ async function saveToKv(fields: Record<string, string>, result: RawResult): Prom
       care_notes: result.common_health_considerations,
       fun_fact: result.fun_fact,
     };
-    await kv.lpush('submissions', JSON.stringify(submission));
-    await kv.incr('total_count');
+    await redis.lpush('submissions', JSON.stringify(submission));
+    await redis.incr('total_count');
     console.log('[SCAN] KV save succeeded, id:', submission.id);
   } catch (err) {
     console.error('[SCAN] KV save error:', err instanceof Error ? err.message : err);

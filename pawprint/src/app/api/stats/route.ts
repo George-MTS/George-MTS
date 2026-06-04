@@ -1,4 +1,9 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +22,8 @@ interface Submission {
 export async function GET(): Promise<Response> {
   try {
     const [totalRaw, submissionsRaw] = await Promise.all([
-      kv.get<number>('total_count'),
-      kv.lrange<string>('submissions', 0, 9),
+      redis.get<number>('total_count'),
+      redis.lrange<string>('submissions', 0, 9),
     ]);
 
     const total = totalRaw ?? 0;
