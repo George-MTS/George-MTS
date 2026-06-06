@@ -1,3 +1,4 @@
+// Redis data collection v2
 import { NextRequest } from 'next/server';
 import sharp from 'sharp';
 import { Resend } from 'resend';
