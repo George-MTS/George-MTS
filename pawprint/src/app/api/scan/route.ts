@@ -180,10 +180,24 @@ async function saveToSupabase(fields: Record<string, string>, result: RawResult)
   }
 }
 
+function getDeviceType(request: NextRequest): 'mobile' | 'desktop' {
+  const ua = request.headers.get('user-agent') ?? '';
+  return /mobile|android|iphone|ipad|ipod/i.test(ua) ? 'mobile' : 'desktop';
+}
+
+function getCountry(request: NextRequest): string {
+  return (
+    request.headers.get('x-vercel-ip-country') ||
+    request.headers.get('cf-ipcountry') ||
+    'unknown'
+  );
+}
+
 async function saveToRedis(
   fields: Record<string, string>,
   result: RawResult,
-  ip: string
+  ip: string,
+  request: NextRequest
 ): Promise<void> {
   const redis = getRedis();
   if (!redis) {
@@ -197,27 +211,24 @@ async function saveToRedis(
 
     const submission = {
       petName: fields.name || null,
-      petType: 'dog',
+      petType: 'dog' as 'dog' | 'cat' | 'other',
       breedIdentified: result.primary_breed,
-      confidence: result.confidence ?? null,
+      confidence: String(result.confidence ?? ''),
+      petAge: result.estimated_age_range || '',
+      petGender: '',
+      deviceType: getDeviceType(request),
+      country: getCountry(request),
+      ipAnon: anonymizeIp(ip),
       timestamp,
-      ip: anonymizeIp(ip),
     };
 
-    // Write the individual scan record
     await redis.set(scanKey, JSON.stringify(submission));
-
-    // Maintain rolling list of last 100 timestamps for lookup
     await redis.lpush('scans:recent', scanKey);
     await redis.ltrim('scans:recent', 0, 99);
-
-    // Increment global counter
     await redis.incr('stats:total_scans');
-
-    // Track breed frequency in sorted set for top-breeds query
     await redis.zincrby('breeds:counts', 1, result.primary_breed);
 
-    console.log('[SCAN] Redis save succeeded, key:', scanKey);
+    console.log('REDIS WRITE SUCCESS', scanKey);
   } catch (err) {
     console.error('[SCAN] Redis save error:', err instanceof Error ? err.message : err);
   }
@@ -354,7 +365,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     await saveToSupabase(fields, result);
 
     // Save to Redis — awaited before response; errors are caught inside and never throw
-    await saveToRedis(fields, result, ip);
+    await saveToRedis(fields, result, ip, request);
 
     // Send email notification — fire-and-forget, never blocks response
     sendNotificationEmail({
