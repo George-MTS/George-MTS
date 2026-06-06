@@ -5,9 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
+// Version 3: WiFi columns removed from both entities (version 2 had wifiBytes).
+// fallbackToDestructiveMigration recreates the DB cleanly on upgrade.
 @Database(
     entities = [AppUsageEntity::class, DailyUsageEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

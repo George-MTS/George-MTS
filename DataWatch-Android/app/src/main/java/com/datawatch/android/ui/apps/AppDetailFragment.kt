@@ -14,6 +14,7 @@ import com.github.mikephil.charting.data.BarEntry
 import com.datawatch.android.databinding.FragmentAppDetailBinding
 import com.datawatch.android.utils.FormatUtils
 
+// FIX 2: WiFi references removed entirely. Shows cellular Active vs Background breakdown.
 class AppDetailFragment : Fragment() {
     private var _binding: FragmentAppDetailBinding? = null
     private val binding get() = _binding!!
@@ -40,13 +41,21 @@ class AppDetailFragment : Fragment() {
             binding.tvAppName.text = packageName
         }
 
-        viewModel.hourlyUsage.observe(viewLifecycleOwner) { hourlyData ->
-            if (hourlyData.isEmpty()) return@observe
+        // Today's breakdown: cellular total, active (foreground), background
+        viewModel.dailyUsage.observe(viewLifecycleOwner) { rows ->
+            val row = rows.firstOrNull() ?: return@observe
+            binding.tvCellularBreakdown.text =
+                "Cellular total:   ${FormatUtils.formatBytes(row.cellularBytes)}"
+            binding.tvActiveBreakdown.text =
+                "Active:              ${FormatUtils.formatBytes(row.activeBytes)}"
+            binding.tvBackgroundBreakdown.text =
+                "Background:     ${FormatUtils.formatBytes(row.backgroundBytes)}"
+            // Hide WiFi field — not tracked
+            binding.tvWifiBreakdown.visibility = View.GONE
 
-            val entries = hourlyData.map { entity ->
-                BarEntry(entity.hour.toFloat(), (entity.cellularBytes + entity.wifiBytes) / (1024f * 1024f))
-            }
-            val dataSet = BarDataSet(entries, "Data Usage (MB)").apply {
+            // Hourly chart: single bar representing today's total (daily granularity in DB)
+            val entries = listOf(BarEntry(0f, row.cellularBytes / (1024f * 1024f)))
+            val dataSet = BarDataSet(entries, "Today (MB)").apply {
                 color = 0xFFF5A623.toInt()
             }
             binding.hourlyChart.apply {
@@ -59,26 +68,16 @@ class AppDetailFragment : Fragment() {
                 legend.textColor = 0xFFF0F4F8.toInt()
                 invalidate()
             }
-
-            val totalCellular = hourlyData.sumOf { it.cellularBytes }
-            val totalWifi = hourlyData.sumOf { it.wifiBytes }
-            val totalForeground = hourlyData.sumOf { it.foregroundBytes }
-            val totalBackground = hourlyData.sumOf { it.backgroundBytes }
-
-            binding.tvCellularBreakdown.text = "Cellular: ${FormatUtils.formatBytes(totalCellular)}"
-            binding.tvWifiBreakdown.text = "WiFi: ${FormatUtils.formatBytes(totalWifi)}"
-            binding.tvForegroundBreakdown.text = "Foreground: ${FormatUtils.formatBytes(totalForeground)}"
-            binding.tvBackgroundBreakdown.text = "Background: ${FormatUtils.formatBytes(totalBackground)}"
         }
 
+        // 7-day cellular chart
         viewModel.weeklyUsage.observe(viewLifecycleOwner) { weeklyData ->
             if (weeklyData.isEmpty()) return@observe
 
-            val dailyTotals = weeklyData.groupBy { it.date }
-                .entries.mapIndexed { index, (_, entities) ->
-                    BarEntry(index.toFloat(), entities.sumOf { it.cellularBytes + it.wifiBytes } / (1024f * 1024f))
-                }
-            val dataSet = BarDataSet(dailyTotals, "7-Day Usage (MB)").apply {
+            val dailyTotals = weeklyData.mapIndexed { index, entity ->
+                BarEntry(index.toFloat(), entity.cellularBytes / (1024f * 1024f))
+            }
+            val dataSet = BarDataSet(dailyTotals, "7-Day Cellular (MB)").apply {
                 color = 0xFF2ECC9A.toInt()
             }
             binding.weeklyChart.apply {

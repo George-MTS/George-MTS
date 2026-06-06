@@ -12,6 +12,8 @@ import com.datawatch.android.utils.PreferenceHelper
 import java.text.SimpleDateFormat
 import java.util.*
 
+// FIX 2: WiFi tracking removed. Only cellular data is monitored.
+// FIX 1: resetTimestamp is respected — queries start from max(midnight, resetTimestamp).
 class DataMonitorWorker(
     context: Context,
     params: WorkerParameters
@@ -25,8 +27,13 @@ class DataMonitorWorker(
 
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val resetTs = prefs.resetTimestamp
 
-            val appUsages = networkStatsService.getAppUsageForToday()
+            val appUsages = networkStatsService.getAppUsageForToday(resetTs)
+
+            if (appUsages.isNotEmpty() && !prefs.isRealDataMode) {
+                prefs.isRealDataMode = true
+            }
 
             appUsages.forEach { usage ->
                 dao.insertAppUsage(
@@ -34,25 +41,29 @@ class DataMonitorWorker(
                         packageName = usage.packageName,
                         date = today,
                         cellularBytes = usage.cellularBytes,
-                        wifiBytes = usage.wifiBytes,
-                        foregroundBytes = usage.foregroundBytes,
+                        activeBytes = usage.activeBytes,
                         backgroundBytes = usage.backgroundBytes,
                         lastUpdatedHour = currentHour
                     )
                 )
+                // Alert if any single app exceeds 50MB cellular in one session
                 if (usage.totalMB > 50f && prefs.notificationsEnabled) {
-                    NotificationHelper.showHighUsageAlert(applicationContext, usage.appName, usage.totalMB)
+                    NotificationHelper.showHighUsageAlert(
+                        applicationContext, usage.appName, usage.totalMB
+                    )
                 }
             }
 
-            val totalCellular = networkStatsService.getTotalCellularUsageToday()
-            val totalWifi = networkStatsService.getTotalWifiUsageToday()
-
-            dao.insertDailyUsage(DailyUsageEntity(date = today, totalCellularBytes = totalCellular, totalWifiBytes = totalWifi))
+            val totalCellular = networkStatsService.getTotalCellularUsageToday(resetTs)
+            dao.insertDailyUsage(
+                DailyUsageEntity(date = today, totalCellularBytes = totalCellular)
+            )
 
             val thresholdBytes = prefs.dailyThresholdMB * 1024L * 1024L
             if (thresholdBytes > 0 && totalCellular > thresholdBytes && prefs.notificationsEnabled) {
-                NotificationHelper.showDailyThresholdAlert(applicationContext, totalCellular / (1024f * 1024f))
+                NotificationHelper.showDailyThresholdAlert(
+                    applicationContext, totalCellular / (1024f * 1024f)
+                )
             }
 
             Result.success()

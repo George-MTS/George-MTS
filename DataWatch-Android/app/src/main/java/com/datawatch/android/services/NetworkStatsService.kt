@@ -3,34 +3,45 @@ package com.datawatch.android.services
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import android.telephony.TelephonyManager
 import android.util.Log
 import com.datawatch.android.models.AppUsageModel
 import java.util.Calendar
 
+// FIX 2 + FIX 3 + FIX 4:
+// - WiFi tracking removed completely. Only TYPE_MOBILE is queried.
+// - HashMap<UID, AppUsageData> deduplication: same UID across multiple buckets gets bytes
+//   accumulated (summed) into a single entry — never a new row.
+// - Secondary seenUids HashSet guards against any edge-case duplicate UID in the output list.
+// - Foreground (active) bytes are tracked separately for cellular only.
+// - startFromTimestamp: queries start from max(midnight, resetTimestamp) so data before a
+//   Reset All Data press is invisible even though the OS still holds it historically.
 class NetworkStatsService(private val context: Context) {
 
     private val networkStatsManager: NetworkStatsManager by lazy {
         context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
     }
 
-    private val packageManager: PackageManager = context.packageManager
+    private val packageManager = context.packageManager
 
-    fun getAppUsageForToday(): List<AppUsageModel> {
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val startTime = calendar.timeInMillis
-        val endTime = System.currentTimeMillis()
-        return getAppUsageForPeriod(startTime, endTime)
+    fun getAppUsageForToday(startFromTimestamp: Long = 0L): List<AppUsageModel> {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val midnightMs = calendar.timeInMillis
+        val startTime = if (startFromTimestamp > midnightMs) startFromTimestamp else midnightMs
+        return getAppUsageForPeriod(startTime, System.currentTimeMillis())
     }
 
     fun getAppUsageForPeriod(startTime: Long, endTime: Long): List<AppUsageModel> {
-        val usageMap = mutableMapOf<Int, AppUsageData>()
+        // FIX 3: HashMap keyed by UID accumulates bytes — same UID from multiple buckets sums.
+        val usageMap = HashMap<Int, AppUsageData>()
 
         try {
             val cellularStats = networkStatsManager.querySummary(
@@ -39,7 +50,23 @@ class NetworkStatsService(private val context: Context) {
                 startTime,
                 endTime
             )
-            processBucket(cellularStats, usageMap, isCellular = true)
+            val bucket = NetworkStats.Bucket()
+            while (cellularStats.hasNextBucket()) {
+                cellularStats.getNextBucket(bucket)
+                val uid = bucket.uid
+                if (uid < 10000) continue  // skip kernel/system UIDs
+
+                // Accumulate — do NOT create a new entry if UID already seen
+                val data = usageMap.getOrPut(uid) { AppUsageData() }
+                data.cellularRx += bucket.rxBytes
+                data.cellularTx += bucket.txBytes
+
+                // FIX 4: track foreground cellular separately for Active vs Background split
+                if (bucket.state == NetworkStats.Bucket.STATE_FOREGROUND) {
+                    data.activeCellularRx += bucket.rxBytes
+                    data.activeCellularTx += bucket.txBytes
+                }
+            }
             cellularStats.close()
         } catch (e: SecurityException) {
             Log.w("NetworkStatsService", "Permission denied for cellular stats: ${e.message}")
@@ -47,64 +74,59 @@ class NetworkStatsService(private val context: Context) {
             Log.w("NetworkStatsService", "Could not get cellular stats: ${e.message}")
         }
 
-        try {
-            val wifiStats = networkStatsManager.querySummary(
-                ConnectivityManager.TYPE_WIFI,
-                null,
-                startTime,
-                endTime
-            )
-            processBucket(wifiStats, usageMap, isCellular = false)
-            wifiStats.close()
-        } catch (e: SecurityException) {
-            Log.w("NetworkStatsService", "Permission denied for WiFi stats: ${e.message}")
-        } catch (e: Exception) {
-            Log.w("NetworkStatsService", "Could not get WiFi stats: ${e.message}")
-        }
+        // FIX 3: secondary guard — seenUids ensures the output list never has duplicate entries
+        val seenUids = HashSet<Int>()
 
         return usageMap.mapNotNull { (uid, data) ->
-            val packages = try {
-                packageManager.getPackagesForUid(uid)
-            } catch (e: Exception) {
-                null
-            }
+            // Secondary dedup guard
+            if (!seenUids.add(uid)) return@mapNotNull null
+
+            val cellularTotal = data.cellularRx + data.cellularTx
+            // FIX 6: hide apps with zero cellular bytes
+            if (cellularTotal == 0L) return@mapNotNull null
+
+            val packages = try { packageManager.getPackagesForUid(uid) } catch (e: Exception) { null }
             val packageName = packages?.firstOrNull() ?: return@mapNotNull null
+
             val appInfo = try {
                 packageManager.getApplicationInfo(packageName, 0)
             } catch (e: Exception) {
                 return@mapNotNull null
             }
+
             val appName = packageManager.getApplicationLabel(appInfo).toString()
-            val appIcon = try {
-                packageManager.getApplicationIcon(packageName)
-            } catch (e: Exception) {
-                null
-            }
+            val appIcon = try { packageManager.getApplicationIcon(packageName) } catch (e: Exception) { null }
+
+            // FIX 4: active = foreground cellular; background = rest
+            val activeBytes = (data.activeCellularRx + data.activeCellularTx).coerceAtLeast(0L)
+            val backgroundBytes = (cellularTotal - activeBytes).coerceAtLeast(0L)
+
             AppUsageModel(
                 packageName = packageName,
                 appName = appName,
                 appIcon = appIcon,
-                totalBytes = data.cellularRx + data.cellularTx + data.wifiRx + data.wifiTx,
-                cellularBytes = data.cellularRx + data.cellularTx,
-                wifiBytes = data.wifiRx + data.wifiTx,
-                foregroundBytes = data.foregroundRx + data.foregroundTx,
-                backgroundBytes = (data.cellularRx + data.cellularTx + data.wifiRx + data.wifiTx) - (data.foregroundRx + data.foregroundTx)
+                cellularBytes = cellularTotal,
+                activeBytes = activeBytes,
+                backgroundBytes = backgroundBytes
             )
-        }.filter { it.totalBytes > 0 }
-         .sortedByDescending { it.totalBytes }
+        }.sortedByDescending { it.cellularBytes }
     }
 
-    fun getTotalCellularUsageToday(): Long {
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
+    fun getTotalCellularUsageToday(startFromTimestamp: Long = 0L): Long {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val midnightMs = calendar.timeInMillis
+        val startTime = if (startFromTimestamp > midnightMs) startFromTimestamp else midnightMs
+
         return try {
             val stats = networkStatsManager.querySummaryForDevice(
                 ConnectivityManager.TYPE_MOBILE,
                 getSubscriberId(),
-                calendar.timeInMillis,
+                startTime,
                 System.currentTimeMillis()
             )
             stats.rxBytes + stats.txBytes
@@ -117,47 +139,23 @@ class NetworkStatsService(private val context: Context) {
         }
     }
 
-    fun getTotalWifiUsageToday(): Long {
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
+    // FIX 2: checks whether device currently has an active cellular/mobile connection.
+    // Returns false if WiFi-only or no connection — dashboard shows a prompt.
+    fun hasCellularConnectivity(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         return try {
-            val stats = networkStatsManager.querySummaryForDevice(
-                ConnectivityManager.TYPE_WIFI,
-                null,
-                calendar.timeInMillis,
-                System.currentTimeMillis()
-            )
-            stats.rxBytes + stats.txBytes
-        } catch (e: SecurityException) {
-            Log.w("NetworkStatsService", "Permission denied for total WiFi: ${e.message}")
-            0L
-        } catch (e: Exception) {
-            Log.w("NetworkStatsService", "Could not get total WiFi: ${e.message}")
-            0L
-        }
-    }
-
-    private fun processBucket(stats: NetworkStats, map: MutableMap<Int, AppUsageData>, isCellular: Boolean) {
-        val bucket = NetworkStats.Bucket()
-        while (stats.hasNextBucket()) {
-            stats.getNextBucket(bucket)
-            val uid = bucket.uid
-            if (uid < 10000) continue
-            val data = map.getOrPut(uid) { AppUsageData() }
-            if (isCellular) {
-                data.cellularRx += bucket.rxBytes
-                data.cellularTx += bucket.txBytes
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val network = cm.activeNetwork ?: return false
+                val caps = cm.getNetworkCapabilities(network) ?: return false
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
             } else {
-                data.wifiRx += bucket.rxBytes
-                data.wifiTx += bucket.txBytes
+                @Suppress("DEPRECATION")
+                val info = cm.activeNetworkInfo
+                @Suppress("DEPRECATION")
+                info != null && info.type == ConnectivityManager.TYPE_MOBILE && info.isConnected
             }
-            if (bucket.state == NetworkStats.Bucket.STATE_FOREGROUND) {
-                data.foregroundRx += bucket.rxBytes
-                data.foregroundTx += bucket.txBytes
-            }
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -173,9 +171,7 @@ class NetworkStatsService(private val context: Context) {
     private data class AppUsageData(
         var cellularRx: Long = 0,
         var cellularTx: Long = 0,
-        var wifiRx: Long = 0,
-        var wifiTx: Long = 0,
-        var foregroundRx: Long = 0,
-        var foregroundTx: Long = 0
+        var activeCellularRx: Long = 0,  // FIX 4: foreground cellular only
+        var activeCellularTx: Long = 0
     )
 }

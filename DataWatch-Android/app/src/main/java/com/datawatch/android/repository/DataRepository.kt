@@ -24,20 +24,25 @@ class DataRepository(private val context: Context) {
     private val today: String get() = dateFormat.format(Date())
 
     suspend fun refreshData() = withContext(Dispatchers.IO) {
-        val appUsages = networkStatsService.getAppUsageForToday()
+        val resetTs = prefs.resetTimestamp
+        val appUsages = networkStatsService.getAppUsageForToday(resetTs)
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-        // BUG 1 FIX: composite PK (packageName, date) means REPLACE updates the single row
-        // per app rather than inserting duplicates. Each refresh stores the latest cumulative
-        // total from NetworkStatsManager — no summation, no double-counting.
+        // FIX 1: once real cellular data arrives, lock isRealDataMode permanently.
+        // From this point forward no mock data can ever be displayed.
+        if (appUsages.isNotEmpty() && !prefs.isRealDataMode) {
+            prefs.isRealDataMode = true
+        }
+
+        // FIX 3: composite PK (packageName, date) + REPLACE = exactly one row per app per day.
+        // NetworkStatsManager already deduped by UID in NetworkStatsService.
         appUsages.forEach { usage ->
             dao.insertAppUsage(
                 AppUsageEntity(
                     packageName = usage.packageName,
                     date = today,
                     cellularBytes = usage.cellularBytes,
-                    wifiBytes = usage.wifiBytes,
-                    foregroundBytes = usage.foregroundBytes,
+                    activeBytes = usage.activeBytes,
                     backgroundBytes = usage.backgroundBytes,
                     lastUpdatedHour = currentHour
                 )
@@ -47,8 +52,7 @@ class DataRepository(private val context: Context) {
         dao.insertDailyUsage(
             DailyUsageEntity(
                 date = today,
-                totalCellularBytes = networkStatsService.getTotalCellularUsageToday(),
-                totalWifiBytes = networkStatsService.getTotalWifiUsageToday()
+                totalCellularBytes = networkStatsService.getTotalCellularUsageToday(resetTs)
             )
         )
     }
@@ -56,6 +60,7 @@ class DataRepository(private val context: Context) {
     fun getLiveAppUsage(): LiveData<List<AppUsageModel>> {
         return dao.getAppUsageForDate(today).map { entities ->
             entities.mapNotNull { entity ->
+                if (entity.cellularBytes == 0L) return@mapNotNull null
                 val pm = context.packageManager
                 try {
                     val info = pm.getApplicationInfo(entity.packageName, 0)
@@ -63,24 +68,21 @@ class DataRepository(private val context: Context) {
                         packageName = entity.packageName,
                         appName = pm.getApplicationLabel(info).toString(),
                         appIcon = pm.getApplicationIcon(entity.packageName),
-                        totalBytes = entity.cellularBytes + entity.wifiBytes,
                         cellularBytes = entity.cellularBytes,
-                        wifiBytes = entity.wifiBytes,
-                        foregroundBytes = entity.foregroundBytes,
+                        activeBytes = entity.activeBytes,
                         backgroundBytes = entity.backgroundBytes
                     )
                 } catch (e: Exception) { null }
-            }.sortedByDescending { it.totalBytes }
+            }.sortedByDescending { it.cellularBytes }
         }
     }
 
-    // BUG 4 FIX: always query NetworkStatsManager directly for device totals.
-    // The DB per-app sums are for listing purposes; the device-level summary uses the
-    // authoritative system query which is always accurate regardless of DB state.
+    // FIX 5: always query NetworkStatsManager directly for the device-level total.
+    // Uses resetTimestamp so data before a Reset All Data press is excluded.
     suspend fun getCurrentSummary(): DataUsageSummary = withContext(Dispatchers.IO) {
+        val resetTs = prefs.resetTimestamp
         DataUsageSummary(
-            totalCellularBytes = networkStatsService.getTotalCellularUsageToday(),
-            totalWifiBytes = networkStatsService.getTotalWifiUsageToday(),
+            totalCellularBytes = networkStatsService.getTotalCellularUsageToday(resetTs),
             dailyThresholdBytes = prefs.dailyThresholdMB * 1024L * 1024L
         )
     }
@@ -95,8 +97,17 @@ class DataRepository(private val context: Context) {
         return dao.getWeeklyUsageForApp(packageName, startDate)
     }
 
+    // FIX 1: full reset.
+    // 1. Clear all DB usage history.
+    // 2. Set resetTimestamp to now — future NSM queries start from this moment, so
+    //    historical data before the reset never reappears even after a VM refresh.
+    // 3. WorkManager workers use the same resetTimestamp, so background jobs also
+    //    respect the reset boundary.
     suspend fun deleteAllData() = withContext(Dispatchers.IO) {
         dao.deleteAllAppUsage()
         dao.deleteAllDailyUsage()
+        prefs.performReset()
     }
+
+    fun hasCellularConnectivity(): Boolean = networkStatsService.hasCellularConnectivity()
 }

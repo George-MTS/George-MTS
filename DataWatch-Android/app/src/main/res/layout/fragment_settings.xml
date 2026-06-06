@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- FIX 2: WiFi settings removed entirely. FIX 6: clean settings page. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -14,12 +15,13 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/settings_title"
+            android:text="Settings"
             android:textColor="@color/primary_text"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginBottom="@dimen/spacing_large"/>
 
+        <!-- Daily threshold -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -36,10 +38,18 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/daily_threshold"
+                    android:text="Daily Safaricom bundle limit (MB)"
                     android:textColor="@color/primary_text"
                     android:textSize="14sp"
-                    android:layout_marginBottom="8dp"/>
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alert fires when cellular usage exceeds this value"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="11sp"
+                    android:layout_marginBottom="10dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -60,7 +70,7 @@
                         android:id="@+id/btn_save_threshold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/save"
+                        android:text="Save"
                         app:backgroundTint="@color/accent_gold"
                         android:textColor="@color/primary_bg"/>
 
@@ -70,6 +80,7 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Notifications toggle -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -84,13 +95,27 @@
                 android:padding="@dimen/spacing_medium"
                 android:gravity="center_vertical">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/notifications"
-                    android:textColor="@color/primary_text"
-                    android:textSize="14sp"/>
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Notifications"
+                        android:textColor="@color/primary_text"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Alert when any app exceeds 50MB or daily limit is reached"
+                        android:textColor="@color/secondary_text"
+                        android:textSize="11sp"/>
+
+                </LinearLayout>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_notifications"
@@ -102,6 +127,7 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Reset all data -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -115,11 +141,28 @@
                 android:orientation="vertical"
                 android:padding="@dimen/spacing_medium">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reset All Data"
+                    android:textColor="@color/primary_text"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clears all tracked usage history permanently. Monitoring resumes fresh from the moment you reset."
+                    android:textColor="@color/secondary_text"
+                    android:textSize="11sp"
+                    android:layout_marginBottom="12dp"/>
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_reset_data"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/reset_data"
+                    android:text="Reset All Data"
                     app:backgroundTint="@color/warning_red"
                     android:textColor="@color/white"/>
 
@@ -127,6 +170,7 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Privacy guarantee -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -142,7 +186,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/privacy_title"
+                    android:text="🔒 Your Privacy is Protected"
                     android:textColor="@color/mint_green"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -154,11 +198,23 @@
                     android:text="@string/privacy_body"
                     android:textColor="@color/secondary_text"
                     android:textSize="12sp"
-                    android:lineSpacingExtra="4dp"/>
+                    android:lineSpacingExtra="4dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <!-- FIX 6: explicit statement per requirements -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DataWatch tracks Safaricom cellular data only."
+                    android:textColor="@color/mint_green"
+                    android:textSize="12sp"
+                    android:textStyle="bold"/>
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
+
+        <View android:layout_width="match_parent" android:layout_height="16dp"/>
 
     </LinearLayout>
 

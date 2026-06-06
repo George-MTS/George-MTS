@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- FIX 2: WiFi section removed entirely. FIX 5: cellular-only summary card. -->
 <androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/swipe_refresh"
@@ -16,6 +17,7 @@
             android:orientation="vertical"
             android:padding="@dimen/spacing_medium">
 
+            <!-- Permission banner -->
             <TextView
                 android:id="@+id/permission_banner"
                 android:layout_width="match_parent"
@@ -27,7 +29,7 @@
                 android:visibility="gone"
                 android:layout_marginBottom="@dimen/spacing_medium"/>
 
-            <!-- Summary card -->
+            <!-- Cellular data summary card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -42,7 +44,6 @@
                     android:orientation="vertical"
                     android:padding="@dimen/spacing_medium">
 
-                    <!-- BUG 2 FIX: "since midnight" label clarifies data is cumulative, not live state. -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -54,10 +55,11 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Today's Usage"
+                            android:text="Safaricom Cellular Data"
                             android:textColor="@color/secondary_text"
                             android:textSize="12sp"/>
 
+                        <!-- FIX 2 + FIX 5: "since midnight" label, no WiFi mention -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -67,6 +69,7 @@
 
                     </LinearLayout>
 
+                    <!-- Progress ring row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -103,7 +106,7 @@
                                 android:id="@+id/tv_threshold"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="of daily limit"
+                                android:text="of Safaricom limit"
                                 android:textColor="@color/secondary_text"
                                 android:textSize="12sp"/>
 
@@ -111,62 +114,32 @@
 
                     </LinearLayout>
 
+                    <!-- Cellular total — only field, WiFi removed -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:orientation="vertical"
                         android:layout_marginTop="@dimen/spacing_medium">
 
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:text="Cellular used today"
+                            android:textColor="@color/secondary_text"
+                            android:textSize="12sp"/>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Cellular"
-                                android:textColor="@color/secondary_text"
-                                android:textSize="12sp"/>
-
-                            <TextView
-                                android:id="@+id/tv_cellular_usage"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0 B"
-                                android:textColor="@color/accent_gold"
-                                android:textSize="18sp"
-                                android:textStyle="bold"/>
-
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:id="@+id/tv_cellular_usage"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="WiFi"
-                                android:textColor="@color/secondary_text"
-                                android:textSize="12sp"/>
-
-                            <TextView
-                                android:id="@+id/tv_wifi_usage"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0 B"
-                                android:textColor="@color/mint_green"
-                                android:textSize="18sp"
-                                android:textStyle="bold"/>
-
-                        </LinearLayout>
+                            android:text="0 B"
+                            android:textColor="@color/accent_gold"
+                            android:textSize="22sp"
+                            android:textStyle="bold"/>
 
                     </LinearLayout>
 
+                    <!-- FIX 5: updated every 30 seconds by DashboardViewModel periodic job -->
                     <TextView
                         android:id="@+id/tv_last_updated"
                         android:layout_width="wrap_content"
@@ -180,55 +153,17 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- BUG 2 FIX: filter chips for All / Cellular-only / WiFi-only views. -->
-            <com.google.android.material.chip.ChipGroup
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/spacing_small"
-                app:singleSelection="true">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_all"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="All"
-                    android:checkable="true"
-                    android:checked="true"
-                    app:chipBackgroundColor="@color/chip_bg_selector"
-                    android:textColor="@color/primary_text"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_cellular"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cellular only"
-                    android:checkable="true"
-                    app:chipBackgroundColor="@color/chip_bg_selector"
-                    android:textColor="@color/primary_text"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_wifi"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="WiFi only"
-                    android:checkable="true"
-                    app:chipBackgroundColor="@color/chip_bg_selector"
-                    android:textColor="@color/primary_text"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"/>
-
-            </com.google.android.material.chip.ChipGroup>
-
+            <!-- Section header -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="App Usage"
+                android:text="Apps using cellular data"
                 android:textColor="@color/primary_text"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="@dimen/spacing_small"/>
 
+            <!-- FIX 1: empty state shows "monitoring" message after reset -->
             <TextView
                 android:id="@+id/empty_state"
                 android:layout_width="match_parent"
