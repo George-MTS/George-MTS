@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DataWatch — UI Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080f18;
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 40px 20px;
+    flex-wrap: wrap;
+    min-height: 100vh;
+  }
+
+  /* Phone shell */
+  .phone {
+    width: 360px;
+    background: #0D1B2A;
+    border-radius: 40px;
+    border: 6px solid #1e3a52;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px #0a1520;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 780px;
+  }
+
+  /* Notch */
+  .notch {
+    width: 120px; height: 28px;
+    background: #1e3a52;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 20px 2px;
+    flex-shrink: 0;
+  }
+  .status-bar span { color: #8FA3B1; font-size: 11px; }
+
+  /* Screen area */
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    scrollbar-width: none;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* Cards */
+  .card {
+    background: #1A2C3D;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Summary card top */
+  .summary-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .summary-top .label { color: #8FA3B1; font-size: 11px; }
+  .since-midnight {
+    color: #8FA3B1;
+    font-size: 9px;
+    background: rgba(143,163,177,0.12);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  /* Circular progress */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+  .ring-wrap { position: relative; width: 88px; height: 88px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-pct { color: #F5A623; font-size: 18px; font-weight: 700; }
+  .ring-label { color: #8FA3B1; font-size: 8px; }
+  .progress-info h2 { color: #F5A623; font-size: 26px; font-weight: 700; }
+  .progress-info p { color: #8FA3B1; font-size: 11px; margin-top: 2px; }
+
+  /* Cellular/WiFi row */
+  .usage-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .usage-cell {}
+  .usage-cell .uc-label { color: #8FA3B1; font-size: 10px; margin-bottom: 2px; }
+  .usage-cell .uc-value { font-size: 16px; font-weight: 700; }
+  .gold { color: #F5A623; }
+  .green { color: #2ECC9A; }
+  .red { color: #E74C3C; }
+  .muted { color: #8FA3B1; }
+
+  .updated-ts { color: #8FA3B1; font-size: 9px; margin-top: 4px; }
+
+  /* Filter chips */
+  .chip-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s;
+  }
+  .chip.active { background: rgba(245,166,35,0.25); color: #F5A623; }
+  .chip.inactive { background: #1A2C3D; color: #8FA3B1; border: 1px solid #263d52; }
+
+  /* Section heading */
+  .section-title {
+    color: #F0F4F8;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  /* App usage item card */
+  .app-card {
+    background: #1A2C3D;
+    border-radius: 16px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .app-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .app-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .app-name {
+    flex: 1;
+    color: #F0F4F8;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-total { color: #F5A623; font-size: 13px; font-weight: 700; margin-right: 6px; }
+  .arrow {
+    color: #8FA3B1;
+    font-size: 14px;
+    transition: transform 0.2s;
+    user-select: none;
+  }
+  .arrow.open { transform: rotate(180deg); }
+
+  /* Expanded detail */
+  .app-detail {
+    display: none;
+    padding: 0 14px 12px 64px;
+    border-top: 1px solid #0D1B2A;
+    padding-top: 10px;
+  }
+  .app-detail.open { display: block; }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+  }
+  .detail-item .di-label { font-size: 9px; color: #8FA3B1; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-item .di-val { font-size: 12px; font-weight: 600; margin-top: 1px; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    background: #1A2C3D;
+    display: flex;
+    border-top: 1px solid #0d1f2e;
+    flex-shrink: 0;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .nav-icon { font-size: 20px; margin-bottom: 3px; }
+  .nav-label { font-size: 9px; font-weight: 500; }
+  .nav-item.active .nav-label { color: #F5A623; }
+  .nav-item.active .nav-icon { filter: none; }
+  .nav-item.inactive .nav-label { color: #8FA3B1; }
+  .nav-item.inactive .nav-icon { opacity: 0.5; }
+
+  /* Settings screen */
+  .settings-label { color: #8FA3B1; font-size: 10px; margin-bottom: 6px; }
+  .settings-input {
+    background: #0D1B2A;
+    border: 1px solid #263d52;
+    border-radius: 8px;
+    color: #F0F4F8;
+    font-size: 14px;
+    padding: 10px 12px;
+    width: 100%;
+    outline: none;
+  }
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    margin-top: 8px;
+    width: 100%;
+  }
+  .btn-gold { background: #F5A623; color: #0D1B2A; }
+  .btn-red { background: #E74C3C; color: #fff; }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toggle-row span { color: #F0F4F8; font-size: 13px; }
+  .toggle {
+    width: 42px; height: 22px;
+    background: #2ECC9A;
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 2px; right: 2px;
+    transition: right 0.2s;
+  }
+  .privacy-box {
+    background: rgba(46,204,154,0.08);
+    border: 1px solid rgba(46,204,154,0.25);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .privacy-box h4 { color: #2ECC9A; font-size: 12px; margin-bottom: 6px; }
+  .privacy-box p { color: #8FA3B1; font-size: 10px; line-height: 1.5; }
+
+  /* Screen title for phone header */
+  .screen-header {
+    color: #F0F4F8;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 4px 0 10px;
+  }
+
+  /* Permission banner */
+  .permission-banner {
+    background: #E74C3C;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 11px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  /* Page label above phone */
+  .phone-label {
+    text-align: center;
+    color: #8FA3B1;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* App detail full screen */
+  .back-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .back-row span { color: #F5A623; font-size: 12px; }
+  .app-header-big {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .app-icon-big {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .app-header-big h3 { color: #F0F4F8; font-size: 17px; font-weight: 700; }
+  .app-header-big p { color: #8FA3B1; font-size: 11px; margin-top: 2px; }
+
+  /* Chart bars */
+  .chart-container {
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    padding: 0 4px;
+    margin-top: 8px;
+  }
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    transition: height 0.3s;
+  }
+  .bar-label { color: #8FA3B1; font-size: 8px; }
+
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .bk-item { background: #0D1B2A; border-radius: 10px; padding: 10px 12px; }
+  .bk-label { color: #8FA3B1; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .bk-val { font-size: 15px; font-weight: 700; margin-top: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ========== SCREEN 1: DASHBOARD ========== -->
+<div class="phone-wrap">
+  <div class="phone-label">Dashboard</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar">
+      <span>9:41</span>
+      <span>DataWatch</span>
+      <span>📶 🔋</span>
+    </div>
+    <div class="screen">
+      <div class="screen-header">DataWatch</div>
+
+      <!-- Summary Card -->
+      <div class="card">
+        <div class="summary-top">
+          <span class="label">Today's Usage</span>
+          <span class="since-midnight">Cumulative since midnight</span>
+        </div>
+        <div class="progress-row">
+          <div class="ring-wrap">
+            <svg width="88" height="88" viewBox="0 0 88 88">
+              <circle cx="44" cy="44" r="36" fill="none" stroke="#0D1B2A" stroke-width="8"/>
+              <circle cx="44" cy="44" r="36" fill="none" stroke="#2ECC9A" stroke-width="8"
+                stroke-dasharray="226" stroke-dashoffset="79" stroke-linecap="round"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-pct">65%</span>
+              <span class="ring-label">used</span>
+            </div>
+          </div>
+          <div class="progress-info">
+            <h2>325 MB</h2>
+            <p>of 500 MB limit (cellular)</p>
+            <p style="color:#8FA3B1;font-size:9px;margin-top:4px;">175 MB remaining</p>
+          </div>
+        </div>
+        <div class="usage-row">
+          <div class="usage-cell">
+            <div class="uc-label">Cellular</div>
+            <div class="uc-value gold">325.4 MB</div>
+          </div>
+          <div class="usage-cell">
+            <div class="uc-label">WiFi</div>
+            <div class="uc-value green">1.2 GB</div>
+          </div>
+        </div>
+        <div class="updated-ts">Updated 14:33:07</div>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="chip-row">
+        <div class="chip active">All</div>
+        <div class="chip inactive">Cellular only</div>
+        <div class="chip inactive">WiFi only</div>
+      </div>
+
+      <div class="section-title">App Usage</div>
+
+      <!-- App cards -->
+      <div class="app-card">
+        <div class="app-row" onclick="toggleExpand(this)">
+          <div class="app-icon" style="background:#1a3a5c">📺</div>
+          <span class="app-name">YouTube</span>
+          <span class="app-total">142.3 MB</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="app-detail open">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="di-label">Cellular</div><div class="di-val gold">98.1 MB</div></div>
+            <div class="detail-item"><div class="di-label">WiFi</div><div class="di-val green">44.2 MB</div></div>
+            <div class="detail-item"><div class="di-label">Foreground</div><div class="di-val muted">140.1 MB</div></div>
+            <div class="detail-item"><div class="di-label">Background</div><div class="di-val red">2.2 MB</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-row" onclick="toggleExpand(this)">
+          <div class="app-icon" style="background:#1a3d1a">📱</div>
+          <span class="app-name">WhatsApp</span>
+          <span class="app-total">87.6 MB</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="app-detail">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="di-label">Cellular</div><div class="di-val gold">62.4 MB</div></div>
+            <div class="detail-item"><div class="di-label">WiFi</div><div class="di-val green">25.2 MB</div></div>
+            <div class="detail-item"><div class="di-label">Foreground</div><div class="di-val muted">71.0 MB</div></div>
+            <div class="detail-item"><div class="di-label">Background</div><div class="di-val red">16.6 MB</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-row" onclick="toggleExpand(this)">
+          <div class="app-icon" style="background:#3a1a1a">🎵</div>
+          <span class="app-name">Spotify</span>
+          <span class="app-total">54.2 MB</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="app-detail">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="di-label">Cellular</div><div class="di-val gold">54.2 MB</div></div>
+            <div class="detail-item"><div class="di-label">WiFi</div><div class="di-val green">0 B</div></div>
+            <div class="detail-item"><div class="di-label">Foreground</div><div class="di-val muted">12.1 MB</div></div>
+            <div class="detail-item"><div class="di-label">Background</div><div class="di-val red">42.1 MB</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-row" onclick="toggleExpand(this)">
+          <div class="app-icon" style="background:#1a2a3a">🗺️</div>
+          <span class="app-name">Google Maps</span>
+          <span class="app-total">31.8 MB</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="app-detail">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="di-label">Cellular</div><div class="di-val gold">31.8 MB</div></div>
+            <div class="detail-item"><div class="di-label">WiFi</div><div class="di-val green">0 B</div></div>
+            <div class="detail-item"><div class="di-label">Foreground</div><div class="di-val muted">30.5 MB</div></div>
+            <div class="detail-item"><div class="di-label">Background</div><div class="di-val red">1.3 MB</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-row" onclick="toggleExpand(this)">
+          <div class="app-icon" style="background:#2a1a3a">📘</div>
+          <span class="app-name">Facebook</span>
+          <span class="app-total">28.4 MB</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="app-detail"></div>
+      </div>
+
+      <div class="app-card">
+        <div class="app-row" onclick="toggleExpand(this)">
+          <div class="app-icon" style="background:#1a3a3a">🐦</div>
+          <span class="app-name">X (Twitter)</span>
+          <span class="app-total">19.7 MB</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="app-detail"></div>
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon">📊</div>
+        <div class="nav-label" style="color:#F5A623">Dashboard</div>
+      </div>
+      <div class="nav-item inactive">
+        <div class="nav-icon">📱</div>
+        <div class="nav-label">Apps</div>
+      </div>
+      <div class="nav-item inactive">
+        <div class="nav-icon">⚙️</div>
+        <div class="nav-label">Settings</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCREEN 2: APP DETAIL ========== -->
+<div class="phone-wrap">
+  <div class="phone-label">App Detail</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar">
+      <span>9:41</span><span>DataWatch</span><span>📶 🔋</span>
+    </div>
+    <div class="screen">
+      <div class="back-row">
+        <span style="color:#F5A623;font-size:16px">‹</span>
+        <span>Back</span>
+      </div>
+
+      <div class="app-header-big">
+        <div class="app-icon-big" style="background:#1a3a5c">📺</div>
+        <div>
+          <h3>YouTube</h3>
+          <p>com.google.android.youtube</p>
+        </div>
+      </div>
+
+      <!-- Breakdown summary -->
+      <div class="card" style="margin-bottom:10px">
+        <div class="section-title" style="margin-bottom:10px">Today's Breakdown</div>
+        <div class="breakdown-grid">
+          <div class="bk-item">
+            <div class="bk-label">Cellular</div>
+            <div class="bk-val gold">98.1 MB</div>
+          </div>
+          <div class="bk-item">
+            <div class="bk-label">WiFi</div>
+            <div class="bk-val green">44.2 MB</div>
+          </div>
+          <div class="bk-item">
+            <div class="bk-label">Foreground</div>
+            <div class="bk-val muted">140.1 MB</div>
+          </div>
+          <div class="bk-item">
+            <div class="bk-label">Background</div>
+            <div class="bk-val red">2.2 MB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hourly chart -->
+      <div class="card" style="margin-bottom:10px">
+        <div class="section-title">Today's Hourly Usage</div>
+        <div class="chart-container">
+          <div class="bar-col"><div class="bar" style="height:8%;background:#F5A623"></div><div class="bar-label">6</div></div>
+          <div class="bar-col"><div class="bar" style="height:15%;background:#F5A623"></div><div class="bar-label">7</div></div>
+          <div class="bar-col"><div class="bar" style="height:32%;background:#F5A623"></div><div class="bar-label">8</div></div>
+          <div class="bar-col"><div class="bar" style="height:55%;background:#F5A623"></div><div class="bar-label">9</div></div>
+          <div class="bar-col"><div class="bar" style="height:78%;background:#F5A623"></div><div class="bar-label">10</div></div>
+          <div class="bar-col"><div class="bar" style="height:90%;background:#F5A623"></div><div class="bar-label">11</div></div>
+          <div class="bar-col"><div class="bar" style="height:100%;background:#F5A623"></div><div class="bar-label">12</div></div>
+          <div class="bar-col"><div class="bar" style="height:60%;background:#F5A623"></div><div class="bar-label">13</div></div>
+          <div class="bar-col"><div class="bar" style="height:45%;background:#F5A623"></div><div class="bar-label">14</div></div>
+        </div>
+      </div>
+
+      <!-- 7-day chart -->
+      <div class="card">
+        <div class="section-title">7-Day Usage</div>
+        <div class="chart-container">
+          <div class="bar-col"><div class="bar" style="height:40%;background:#2ECC9A"></div><div class="bar-label">Mon</div></div>
+          <div class="bar-col"><div class="bar" style="height:65%;background:#2ECC9A"></div><div class="bar-label">Tue</div></div>
+          <div class="bar-col"><div class="bar" style="height:30%;background:#2ECC9A"></div><div class="bar-label">Wed</div></div>
+          <div class="bar-col"><div class="bar" style="height:80%;background:#2ECC9A"></div><div class="bar-label">Thu</div></div>
+          <div class="bar-col"><div class="bar" style="height:55%;background:#2ECC9A"></div><div class="bar-label">Fri</div></div>
+          <div class="bar-col"><div class="bar" style="height:90%;background:#2ECC9A"></div><div class="bar-label">Sat</div></div>
+          <div class="bar-col"><div class="bar" style="height:100%;background:#2ECC9A"></div><div class="bar-label">Sun</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item inactive"><div class="nav-icon">📊</div><div class="nav-label">Dashboard</div></div>
+      <div class="nav-item active"><div class="nav-icon">📱</div><div class="nav-label" style="color:#F5A623">Apps</div></div>
+      <div class="nav-item inactive"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCREEN 3: SETTINGS ========== -->
+<div class="phone-wrap">
+  <div class="phone-label">Settings</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status-bar"><span>9:41</span><span>DataWatch</span><span>📶 🔋</span></div>
+    <div class="screen">
+      <div class="screen-header">Settings</div>
+
+      <!-- Daily threshold -->
+      <div class="card">
+        <div class="settings-label">Daily cellular data limit (MB)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="settings-input" type="number" value="500" style="flex:1"/>
+          <button class="btn btn-gold" style="width:auto;margin:0;padding:10px 14px">Save</button>
+        </div>
+        <div style="color:#8FA3B1;font-size:9px;margin-top:6px">Alert fires when cellular usage exceeds this value</div>
+      </div>
+
+      <!-- Notifications toggle -->
+      <div class="card">
+        <div class="toggle-row">
+          <div>
+            <div style="color:#F0F4F8;font-size:13px;font-weight:600">Notifications</div>
+            <div style="color:#8FA3B1;font-size:10px;margin-top:2px">Alerts for high data usage</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+      </div>
+
+      <!-- 50MB per-app alert note -->
+      <div class="card">
+        <div class="toggle-row">
+          <div>
+            <div style="color:#F0F4F8;font-size:13px;font-weight:600">Per-app spike alert</div>
+            <div style="color:#8FA3B1;font-size:10px;margin-top:2px">Warn if any app exceeds 50 MB in one session</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="card">
+        <div style="color:#F0F4F8;font-size:13px;font-weight:600;margin-bottom:4px">Reset All Data</div>
+        <div style="color:#8FA3B1;font-size:10px;margin-bottom:10px">Permanently delete all tracked usage history from this device.</div>
+        <button class="btn btn-red">Reset All Data</button>
+      </div>
+
+      <!-- Privacy -->
+      <div class="privacy-box">
+        <h4>🔒 Your Privacy is Protected</h4>
+        <p>DataWatch operates entirely on your device. No data is ever transmitted to external servers, cloud services, or third parties. All usage statistics are stored locally and encrypted using AES-256 via Android Keystore.<br><br>
+        <strong style="color:#2ECC9A">No INTERNET permission is declared in this app.</strong> It is physically incapable of sending data anywhere.</p>
+      </div>
+
+      <div style="height:16px"></div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item inactive"><div class="nav-icon">📊</div><div class="nav-label">Dashboard</div></div>
+      <div class="nav-item inactive"><div class="nav-icon">📱</div><div class="nav-label">Apps</div></div>
+      <div class="nav-item active"><div class="nav-icon">⚙️</div><div class="nav-label" style="color:#F5A623">Settings</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleExpand(row) {
+    const detail = row.nextElementSibling;
+    const arrow = row.querySelector('.arrow');
+    const isOpen = detail.classList.contains('open');
+    // Close all others
+    document.querySelectorAll('.app-detail.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.arrow.open').forEach(a => a.classList.remove('open'));
+    if (!isOpen) {
+      detail.classList.add('open');
+      arrow.classList.add('open');
+    }
+  }
+
+  // Chip filter interactivity
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      const siblings = this.parentElement.querySelectorAll('.chip');
+      siblings.forEach(c => { c.classList.remove('active'); c.classList.add('inactive'); });
+      this.classList.remove('inactive');
+      this.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
