@@ -4,11 +4,6 @@ import { Resend } from 'resend';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { Redis } from '@upstash/redis';
-
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
 import { checkAndIncrement } from '@/lib/usageCounter';
 import { checkIpLimit } from '@/lib/ipRateLimit';
 import { IS_TEST_MODE, MOCK_SCAN_RESULT } from '@/lib/mockData';
@@ -17,10 +12,18 @@ import type { BreedScanResult, ScanAPIResponse } from '@/types';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
+function getRedis(): Redis | null {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  return new Redis({ url, token });
+}
+
 console.log('[SCAN] RESEND_KEY present:', !!process.env.RESEND_API_KEY);
 console.log('[SCAN] NOTIFICATION_EMAIL:', process.env.NOTIFICATION_EMAIL ?? 'not set');
 console.log('[SCAN] SUPABASE_URL present:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
 console.log('[SCAN] SERVICE_ROLE_KEY present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+console.log('[SCAN] KV_REST_API_URL present:', !!process.env.KV_REST_API_URL);
 
 const SYSTEM_PROMPT = `You are the world's most accurate dog and cat breed identification expert.
 You have encyclopedic knowledge of every AKC, KC, and FCI registered breed,
@@ -84,6 +87,15 @@ function getClientIp(request: NextRequest): string {
     request.headers.get('x-real-ip') ||
     'unknown'
   );
+}
+
+function anonymizeIp(ip: string): string {
+  const parts = ip.split('.');
+  if (parts.length === 4) return `${parts[0]}.${parts[1]}.x.x`;
+  // IPv6 — keep first two groups only
+  const v6 = ip.split(':');
+  if (v6.length > 2) return `${v6[0]}:${v6[1]}::x`;
+  return 'unknown';
 }
 
 async function compressImage(buffer: ArrayBuffer, mimeType: string): Promise<Buffer> {
@@ -168,24 +180,46 @@ async function saveToSupabase(fields: Record<string, string>, result: RawResult)
   }
 }
 
-async function saveToKv(fields: Record<string, string>, result: RawResult): Promise<void> {
+async function saveToRedis(
+  fields: Record<string, string>,
+  result: RawResult,
+  ip: string
+): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    console.log('[SCAN] Redis env vars missing — skipping KV save');
+    return;
+  }
+
   try {
+    const timestamp = new Date().toISOString();
+    const scanKey = `scan:${timestamp}`;
+
     const submission = {
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      pet_name: fields.name || null,
-      pet_type: 'dog',
-      breed_identified: result.primary_breed,
+      petName: fields.name || null,
+      petType: 'dog',
+      breedIdentified: result.primary_breed,
       confidence: result.confidence ?? null,
-      temperament: result.typical_temperament,
-      care_notes: result.common_health_considerations,
-      fun_fact: result.fun_fact,
+      timestamp,
+      ip: anonymizeIp(ip),
     };
-    await redis.lpush('submissions', JSON.stringify(submission));
-    await redis.incr('total_count');
-    console.log('[SCAN] KV save succeeded, id:', submission.id);
+
+    // Write the individual scan record
+    await redis.set(scanKey, JSON.stringify(submission));
+
+    // Maintain rolling list of last 100 timestamps for lookup
+    await redis.lpush('scans:recent', scanKey);
+    await redis.ltrim('scans:recent', 0, 99);
+
+    // Increment global counter
+    await redis.incr('stats:total_scans');
+
+    // Track breed frequency in sorted set for top-breeds query
+    await redis.zincrby('breeds:counts', 1, result.primary_breed);
+
+    console.log('[SCAN] Redis save succeeded, key:', scanKey);
   } catch (err) {
-    console.error('[SCAN] KV save error:', err instanceof Error ? err.message : err);
+    console.error('[SCAN] Redis save error:', err instanceof Error ? err.message : err);
   }
 }
 
@@ -211,7 +245,7 @@ async function sendNotificationEmail(data: {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const timestamp = new Date().toISOString();
 
-  const result = await resend.emails.send({
+  const emailResult = await resend.emails.send({
     from: 'onboarding@resend.dev',
     to,
     subject: `New PawPrint Submission — ${data.petName || 'Unknown'} the ${data.breedIdentified}`,
@@ -229,9 +263,9 @@ async function sendNotificationEmail(data: {
     `,
   });
 
-  console.log('[SCAN] Resend response:', JSON.stringify(result));
-  if (result.error) {
-    console.error('[SCAN] Resend email failed:', result.error);
+  console.log('[SCAN] Resend response:', JSON.stringify(emailResult));
+  if (emailResult.error) {
+    console.error('[SCAN] Resend email failed:', emailResult.error);
   } else {
     console.log('[SCAN] Notification email sent to', to);
   }
@@ -316,11 +350,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
     }
 
-    // Save to Supabase — awaited before response, so Vercel doesn't kill it
+    // Save to Supabase — awaited before response
     await saveToSupabase(fields, result);
 
-    // Save to Vercel KV — awaited before response
-    await saveToKv(fields, result);
+    // Save to Redis — awaited before response; errors are caught inside and never throw
+    await saveToRedis(fields, result, ip);
 
     // Send email notification — fire-and-forget, never blocks response
     sendNotificationEmail({
